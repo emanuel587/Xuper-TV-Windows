@@ -1,0 +1,14 @@
+{
+  "portal_hosts": ["https://service.example.invalid"],
+  "key_base64": "",
+  "app_id": "example.app",
+  "apk_version": "43404",
+  "installation_serial": "LOCAL_ONLY_GENERATED_VALUE",
+  "account_type": "auto",
+  "login_type": "2",
+  "password_salt": "",
+  "password_aes_key": "",
+  "language": "es",
+  "device_id": "02:00:00:00:00:01",
+  "ca_file": "sdmc:/switch/xuperswitch/cacert.pem"
+}

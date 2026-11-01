@@ -1,0 +1,43 @@
+CXX ?= g++
+CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Werror -Iinclude -Iinclude/vendor
+MBEDTLS_CFLAGS ?=
+MBEDTLS_LIBS ?= -lmbedcrypto
+CURL_CFLAGS ?=
+CURL_LIBS ?= -lcurl
+.PHONY: test test-service test-ranger test-state player clean
+test:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) source/catalog.cpp tests/catalog_test.cpp -o build-host/catalog_test
+	./build-host/catalog_test
+	$(CXX) $(CXXFLAGS) $(MBEDTLS_CFLAGS) source/codec.cpp tests/codec_test.cpp $(MBEDTLS_LIBS) -o build-host/codec_test
+	./build-host/codec_test
+test-ranger:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) $(MBEDTLS_CFLAGS) source/ranger_codec.cpp tests/ranger_codec_test.cpp $(MBEDTLS_LIBS) -o build-host/ranger_codec_test
+	./build-host/ranger_codec_test
+test-service:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) $(MBEDTLS_CFLAGS) $(CURL_CFLAGS) source/catalog.cpp source/codec.cpp source/ranger_codec.cpp source/service.cpp source/trace.cpp tests/service_probe.cpp $(MBEDTLS_LIBS) $(CURL_LIBS) -o build-host/service_probe
+	python tests/test_service.py build-host/service_probe
+	python tests/test_ranger_service.py build-host/service_probe
+player:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) $(MBEDTLS_CFLAGS) $(CURL_CFLAGS) source/main.cpp source/catalog.cpp source/player.cpp source/view.cpp source/trace.cpp source/codec.cpp source/ranger_codec.cpp source/service.cpp source/artwork.cpp \
+	    $$(pkg-config --cflags --libs sdl2 SDL2_ttf mpv) $(MBEDTLS_LIBS) $(CURL_LIBS) -lpng16 -ljpeg -lwebp -pthread -o build-host/xuperswitch
+clean:
+	rm -rf build-host
+
+test-state:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) tests/playback_state_test.cpp -o build-host/playback_state_test
+	./build-host/playback_state_test
+
+test-errors:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) tests/playback_error_test.cpp -o build-host/playback_error_test
+	./build-host/playback_error_test
+
+test-saved:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) source/catalog.cpp tests/saved_catalog_test.cpp -o build-host/saved_catalog_test
+	./build-host/saved_catalog_test
