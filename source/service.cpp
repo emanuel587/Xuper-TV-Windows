@@ -2,6 +2,7 @@
 #include "codec.hpp"
 #include "ranger_codec.hpp"
 #include "trace.hpp"
+#include "installation.hpp"
 #include <curl/curl.h>
 #define JSON_NOEXCEPTION 1
 #include "json.hpp"
@@ -340,10 +341,16 @@ static SourceResult resolve_ranger(const std::shared_ptr<ServiceSession>& s,Rang
 }
 
 LoginAttempt service_bootstrap(const std::string& path) {
-    LoginAttempt out;std::ifstream file(path);
-    if(!file){out.status="Falta service.json junto al NRO.";return out;}
-    std::string bytes((std::istreambuf_iterator<char>(file)),{});
-    Json config=Json::parse(bytes,nullptr,false);
+    LoginAttempt out;Json config;
+    auto entropy=[](unsigned char* bytes,size_t size){
+#ifdef __SWITCH__
+        randomGet(bytes,size);
+#else
+        std::random_device random;for(size_t i=0;i<size;++i)bytes[i]=static_cast<unsigned char>(random());
+#endif
+        return true;
+    };
+    if(!load_installation(path,config,out.status,entropy))return out;
     if(!config.is_object()||text(config,"installation_serial").empty()||text(config,"password_salt").empty()){
         out.status="Actualiza todos los archivos del paquete.";return out;
     }
