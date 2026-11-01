@@ -1,7 +1,14 @@
 # Xuper TV by JonaRuacho
 
 Cliente homebrew nativo para Nintendo Switch. Proyecto comunitario en C++17,
-libnx, SDL2 y libmpv. Version del codigo: **0.14.0**.
+libnx, SDL2 y libmpv. Version del codigo: **0.14.1**.
+
+## Descargar para usar en Switch
+
+Ve a **Releases** y descarga el ZIP terminado en **_Switch.zip**. Copia su
+carpeta `switch` a la SD y abre hbmenu con memoria completa. Consulta
+[INSTALAR.md](INSTALAR.md). El primer inicio genera una identidad local propia;
+no necesitas compilar ni configurar desde una APK para este paquete.
 
 ## Funciones
 
@@ -21,8 +28,8 @@ La interfaz 0.14 paso pruebas locales; requiere validacion en consola. Consulta
 
 Se publica el codigo del cliente, herramientas, pruebas sinteticas y avisos de
 licencia. No incluye APK, bibliotecas Android propietarias, archivos de cuenta,
-claves extraidas de la APK, identidad de instalacion, registros ni catalogos del
-usuario. Tampoco incorpora un servicio de television o una suscripcion.
+identidad de instalacion, registros ni catalogos del usuario. La plantilla
+publica contiene parametros comunes de conexion, no datos de cuenta. Tampoco incorpora un servicio de television o una suscripcion.
 
 ## Compilar
 

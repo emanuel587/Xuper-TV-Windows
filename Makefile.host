@@ -41,3 +41,8 @@ test-saved:
 	@mkdir -p build-host
 	$(CXX) $(CXXFLAGS) source/catalog.cpp tests/saved_catalog_test.cpp -o build-host/saved_catalog_test
 	./build-host/saved_catalog_test
+
+test-installation:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) tests/installation_test.cpp -o build-host/installation_test
+	./build-host/installation_test

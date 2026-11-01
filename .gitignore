@@ -29,3 +29,8 @@ __pycache__/
 *.pyc
 font.ttf
 cacert.pem
+
+!service.template.json
+!packaging/runtime/switch/xuperswitch/font.ttf
+!packaging/runtime/switch/xuperswitch/cacert.pem
+/dist/

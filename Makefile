@@ -1,7 +1,7 @@
 TARGET := xuperswitch
 APP_TITLE := XuperSwitch
 APP_AUTHOR := Jona Ruacho
-APP_VERSION := 0.14.0
+APP_VERSION := 0.14.1
 
 ifeq ($(strip $(DEVKITPRO)),)
 $(error Instala devkitPro y abre su terminal MSYS2; falta DEVKITPRO)
