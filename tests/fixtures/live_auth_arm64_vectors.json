@@ -1,0 +1,26 @@
+[
+  {
+    "resource": "/live/test?token=synthetic&media_code=abc",
+    "instance": 0,
+    "moment_ms": 1793548800123,
+    "content_auth": "/live/test?token=synthetic&media_code=abc&sign2_method=sign_o3&instance=0&start_moment=1793548800123&sign2=1c4541c23a023d11d20979e6351aa3ae"
+  },
+  {
+    "resource": "/live/%2Fcam?tag=alpha&token=a%2Fb%3D%3D&expires=1793550000",
+    "instance": 7,
+    "moment_ms": 1793548800456,
+    "content_auth": "/live/%2Fcam?tag=alpha&token=a%2Fb%3D%3D&expires=1793550000&sign2_method=sign_o3&instance=7&start_moment=1793548800456&sign2=39084718f9df2931391989f8f05c9de4"
+  },
+  {
+    "resource": "/live/test?token=abc",
+    "instance": -1,
+    "moment_ms": 1793548800789,
+    "content_auth": "/live/test?token=abc&sign2_method=sign_o3&instance=-1&start_moment=1793548800789&sign2=b5db6ede744e9c4d0f0bad97c3bb9f86"
+  },
+  {
+    "resource": "/watch.m3u8?sig=a%2Fb&expires=123",
+    "instance": 0,
+    "moment_ms": 1793548800000,
+    "content_auth": "/watch.m3u8?sig=a%2Fb&expires=123"
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "kind": "live",
+    "seed_input": "",
+    "base_key": "3fa377639b0c9e6c563143e9e3149b16",
+    "resource": "req:/slb/v9/live",
+    "iv": "8f17c4dfd8c3b78f76758eead24b65f1",
+    "plain": "",
+    "cipher_hex": "90a93718c248ab4a4bd1e8274543a035",
+    "encoded": "MiMsCb9nL5gX5IRfJVkREc"
+  },
+  {
+    "kind": "live",
+    "seed_input": "",
+    "base_key": "3fa377639b0c9e6c563143e9e3149b16",
+    "resource": "resp:/slb/v9/live",
+    "iv": "a16d14f0818d600444ed433e886fbb1a",
+    "plain": "",
+    "cipher_hex": "2302840252aaadfefd9520c7fc43a9f8",
+    "encoded": "n6iYj-iLwaK0-l738YkgZj"
+  },
+  {
+    "kind": "live",
+    "seed_input": "a",
+    "base_key": "4e7465a3f78ea4c57d0756cb8f450274",
+    "resource": "req:/slb/v9/live",
+    "iv": "7d7301596a00a06c42014b14d66fb603",
+    "plain": "a",
+    "cipher_hex": "644ac873987d34a227b345997025852a",
+    "encoded": "TYwnoHm0EinfP5FToBFtiR"
+  },
+  {
+    "kind": "live",
+    "seed_input": "a",
+    "base_key": "4e7465a3f78ea4c57d0756cb8f450274",
+    "resource": "resp:/slb/v9/live",
+    "iv": "93c607ce4558a56c3353d6b7cde1de8a",
+    "plain": "a",
+    "cipher_hex": "fb4962c1b6831889b6210c29ddcfbea1",
+    "encoded": "Z5-h6Qp7CneNnc6gsoZZAc"
+  },
+  {
+    "kind": "live",
+    "seed_input": "test-key",
+    "base_key": "b51d650998fbfd81f3a9d418729f8f3f",
+    "resource": "req:/slb/v9/live",
+    "iv": "0340dd15e31166969843d3d3c8539242",
+    "plain": "channel-test",
+    "cipher_hex": "aa3593119c516c2ca67a60ea65747cfe",
+    "encoded": "L2F1YTuJQByeIe7LT4Jz8R"
+  },
+  {
+    "kind": "live",
+    "seed_input": "test-key",
+    "base_key": "b51d650998fbfd81f3a9d418729f8f3f",
+    "resource": "resp:/slb/v9/live",
+    "iv": "dbd03d3379fe3144a7b2705cb09f4dec",
+    "plain": "channel-test",
+    "cipher_hex": "d995590519703ebcf5853a7469445e14",
+    "encoded": "NTxTWJ-6UwDvm1g5pVJItj"
+  },
+  {
+    "kind": "live",
+    "seed_input": "test-request-12345",
+    "base_key": "7a4e8d2aa48f1c4a3b0164039cba856d",
+    "resource": "req:/slb/v9/live",
+    "iv": "869cafc5da9448f92055b9365e1fe361",
+    "plain": "request-16-bytes",
+    "cipher_hex": "079655ad83273f7e012d8549ae0b7f71bbed4ab702cfe8b0eebcbc2a70a47e39",
+    "encoded": "WHTxwSbfUsdWXSx9wRq8oQrqlwoBDZh6KwyzifBMa2M"
+  },
+  {
+    "kind": "live",
+    "seed_input": "test-request-12345",
+    "base_key": "7a4e8d2aa48f1c4a3b0164039cba856d",
+    "resource": "resp:/slb/v9/live",
+    "iv": "e3012aedc0252e9689250b80e05f0665",
+    "plain": "request-16-bytes",
+    "cipher_hex": "3e4ceefcc11d8a5f3b7e9eba592ce75c101f44b65279d9a0abfa2a483a04e040",
+    "encoded": "UMDG8bYOh-zKag__FlDf4WjaJXTlIOeRL8ALl7AYdYj"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "",
+    "base_key": "6d2ee82450f89279645d2b8c67f1ee7b",
+    "resource": "req:/slb/v11/vod",
+    "iv": "10c5437b4ac6c683557e92e6b6fede51",
+    "plain": "",
+    "cipher_hex": "476d5d4e2d54e88b532a1d9169f114a6",
+    "encoded": "JNvO1hvV_nq1imNJpaYVgR"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "",
+    "base_key": "6d2ee82450f89279645d2b8c67f1ee7b",
+    "resource": "resp:/slb/v11/vod",
+    "iv": "4243a1a8be9fc0c44286a969dc14d4ab",
+    "plain": "",
+    "cipher_hex": "e54de58a5710ba1e19b9c5ed182b52ce",
+    "encoded": "HVs-h-ocGmdTGo4qCBqlDR"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "a",
+    "base_key": "843f1086984751e6644fb16986105ede",
+    "resource": "req:/slb/v11/vod",
+    "iv": "8202269dda09f57a88c12229dd86f386",
+    "plain": "a",
+    "cipher_hex": "ec8232a35a7140aaabcce69dbd02d338",
+    "encoded": "KnnyAvguciLwDkpOrcX1kj"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "a",
+    "base_key": "843f1086984751e6644fb16986105ede",
+    "resource": "resp:/slb/v11/vod",
+    "iv": "e15f17125918c682b911ae33e08668e5",
+    "plain": "a",
+    "cipher_hex": "b1dea3276596d5a32c4b39b0e49e3117",
+    "encoded": "PO_29NFFvpbPlDe6H9dut6"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "test-key",
+    "base_key": "13c1f89735883bb83a6084e87e5d249d",
+    "resource": "req:/slb/v11/vod",
+    "iv": "4c4def826b7a62864df7f1ad9a030f76",
+    "plain": "channel-test",
+    "cipher_hex": "e9b9f38db7b797492823830eb0330277",
+    "encoded": "_QfD2QIs-5MAndbkP7bBO6"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "test-key",
+    "base_key": "13c1f89735883bb83a6084e87e5d249d",
+    "resource": "resp:/slb/v11/vod",
+    "iv": "ed4fb657c83bac9bf37e140fef8d0e79",
+    "plain": "channel-test",
+    "cipher_hex": "4d4900f31b43d019d81776f1062a5878",
+    "encoded": "1VMjzuq75WfStsQuWhgSIj"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "test-request-12345",
+    "base_key": "787a5e1c0508de960eaa69b744c25488",
+    "resource": "req:/slb/v11/vod",
+    "iv": "9fa8e20a0b10cbf475482a6e2d2d3dc4",
+    "plain": "request-16-bytes",
+    "cipher_hex": "0f067f5be70e23ed80633922daf4c0d7072e40f64e251d19360819edab282fb2",
+    "encoded": "76T8FZoknZNjSDMhNr1jv6oGcUTk9J5TERRTKpPAXKn"
+  },
+  {
+    "kind": "vod",
+    "seed_input": "test-request-12345",
+    "base_key": "787a5e1c0508de960eaa69b744c25488",
+    "resource": "resp:/slb/v11/vod",
+    "iv": "c8475dbaf4996f783e1efd894438ccbd",
+    "plain": "request-16-bytes",
+    "cipher_hex": "b460fc6688b1b41eba292df7e6bd25a016ad10638bfd1579becb29771dbc78a5",
+    "encoded": "qC7zTAhuqW__ilssHw5-AWpqYCkX8JxHrPPgOuNzIiV"
+  }
+]

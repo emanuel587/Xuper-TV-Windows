@@ -1,0 +1,22 @@
+[
+  {
+    "code": "channel-001",
+    "format": "",
+    "path": "/live/channel-001.ts"
+  },
+  {
+    "code": "channel_ABC",
+    "format": "ts",
+    "path": "/live/channel_ABC.ts"
+  },
+  {
+    "code": "test-channel",
+    "format": "mpegts",
+    "path": "/live/test-channel.ts"
+  },
+  {
+    "code": "channel-mp4",
+    "format": "mp4",
+    "path": "/live/channel-mp4.mp4"
+  }
+]
