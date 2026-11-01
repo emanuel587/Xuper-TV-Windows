@@ -5,9 +5,7 @@ libnx, SDL2 y libmpv. Version del codigo: **0.14.1**.
 
 ## Descargar para usar en Switch
 
-**El instalador 0.14.1 esta en preparacion; aun no hay ZIP en Releases.**
-
-Ve a **Releases** y descarga el ZIP terminado en **_Switch.zip**. Copia su
+Ve a [**Releases**](https://github.com/jonaruacho/Xuper-TV-by-JonaRuacho/releases/latest) y descarga el ZIP terminado en **_Switch.zip**. Copia su
 carpeta `switch` a la SD y abre hbmenu con memoria completa. Consulta
 [INSTALAR.md](INSTALAR.md). El primer inicio genera una identidad local propia;
 no necesitas compilar ni configurar desde una APK para este paquete.
