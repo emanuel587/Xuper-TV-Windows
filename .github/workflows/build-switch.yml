@@ -1,0 +1,32 @@
+name: Compilar paquete para Switch
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar dependencias de Switch
+        shell: bash
+        run: |
+          dkp-pacman -Sy --noconfirm
+          dkp-pacman -S --noconfirm --needed switch-sdl2 switch-sdl2_ttf switch-curl switch-mbedtls switch-libpng switch-libjpeg-turbo switch-libwebp
+          curl -fL https://github.com/xfangfang/wiliwili/releases/download/v0.1.0/switch-ffmpeg-7.1-1-any.pkg.tar.zst -o /tmp/switch-ffmpeg.pkg.tar.zst
+          curl -fL https://github.com/xfangfang/wiliwili/releases/download/v0.1.0/switch-libmpv-0.36.0-3-any.pkg.tar.zst -o /tmp/switch-libmpv.pkg.tar.zst
+          echo '993e8ce950cf43040f1c213daf66c6dd4cd7e89d731ea6239856a76b40d65fa6  /tmp/switch-ffmpeg.pkg.tar.zst' | sha256sum -c -
+          echo '672aa214a6cb811db7c39bdeebe4462e3a2eed47c53eac8b562b7ccd8fc3c859  /tmp/switch-libmpv.pkg.tar.zst' | sha256sum -c -
+          dkp-pacman -U --noconfirm /tmp/switch-ffmpeg.pkg.tar.zst /tmp/switch-libmpv.pkg.tar.zst
+      - name: Compilar NRO y empaquetar
+        shell: bash
+        run: |
+          make -j2
+          mkdir -p dist
+          cp xuperswitch.nro xuperswitch.nacp dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xuper-TV-0.14.1-Switch
+          path: dist/*
+          if-no-files-found: error
