@@ -118,7 +118,11 @@ int main(int argc,char** argv){
         const auto started=SDL_GetTicks();if(splash)view.splash(message);
         std::thread worker([&]{task();complete.store(true);});
         while(!complete.load()||(splash&&SDL_GetTicks()-started<1100)){
-            SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT){running=false;cancel_task=true;}if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b))cancel_task=true;
+            SDL_Event e;while(SDL_PollEvent(&e)){
+            if(e.type==SDL_QUIT){running=false;cancel_task=true;}
+            if(e.type==SDL_WINDOWEVENT&&e.window.event==SDL_WINDOWEVENT_CLOSE){running=false;cancel_task=true;}
+            if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b||
+               (e.key.keysym.sym==SDLK_q&&(SDL_GetModState()&KMOD_CTRL))))cancel_task=true;
 #ifndef __SWITCH__
             if(xs::gamepad_translate(e)==xs::Pad::B)cancel_task=true;
 #endif
@@ -182,9 +186,13 @@ int main(int argc,char** argv){
             }
 #endif
             if(event.type==SDL_WINDOWEVENT){
+                if(event.window.event==SDL_WINDOWEVENT_CLOSE){running=false;continue;}
                 redraw=true;
 #ifdef _WIN32
-                if(webui_active&&event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED)webui.resize();
+                if(webui_active&&(event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED||
+                                  event.window.event==SDL_WINDOWEVENT_RESIZED||
+                                  event.window.event==SDL_WINDOWEVENT_MAXIMIZED||
+                                  event.window.event==SDL_WINDOWEVENT_RESTORED))webui.resize();
 #endif
             }
             if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
@@ -197,6 +205,18 @@ int main(int argc,char** argv){
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
                     case SDLK_ESCAPE:back=true;if(history.empty()&&!donating)running=false;break;
+#ifdef _WIN32
+                    case SDLK_q:if((SDL_GetModState()&KMOD_CTRL)!=0)running=false;break;
+                    case SDLK_F11:{
+                        const Uint32 flags=SDL_GetWindowFlags(view.window);
+                        const bool fullscreen=(flags&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(view.window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0){
+                            if(fullscreen){SDL_SetWindowSize(view.window,1280,720);SDL_SetWindowPosition(view.window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);}
+                            redraw=true;
+                        }
+                        break;
+                    }
+#endif
                     case SDLK_UP:up=true;break;
                     case SDLK_DOWN:down=true;break;
                     case SDLK_LEFT:left=true;break;
