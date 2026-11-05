@@ -20,6 +20,7 @@
     const native = {
       navigate: () => window.xuperNavigate?.(payload.page || activePage),
       "play-selected": () => window.xuperPlay?.(),
+      favorite: () => window.xuperFavorite?.(),
       "search-query": () => window.xuperSearch?.(payload.query || ""),
       "select-item": () => window.xuperSelectItem?.(Number(payload.index || 0)),
       back: () => window.xuperBack?.(),
@@ -66,6 +67,7 @@
   });
 
   document.getElementById("watch").addEventListener("click", () => send("play-selected"));
+  document.getElementById("favorite").addEventListener("click", () => send("favorite"));
   document.getElementById("more").addEventListener("click", () => {
     const item = items[selectedIndex];
     if (!item) return notify("Selecciona un título del catálogo.");
