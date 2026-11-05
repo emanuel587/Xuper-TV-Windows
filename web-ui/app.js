@@ -193,10 +193,31 @@
   document.addEventListener("keydown",event=>{
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){event.preventDefault();$("search-input").focus();return;}
     if(event.key==="Escape"){if(detailsDialog.open)detailsDialog.close();else send("back");return;}
-    if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key))return;
+    if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key)||detailsDialog.open)return;
     const active=document.activeElement, navIndex=navItems.indexOf(active);
-    if(navIndex>=0&&(event.key==="ArrowLeft"||event.key==="ArrowRight")){event.preventDefault();navItems[Math.max(0,Math.min(navIndex+(event.key==="ArrowLeft"?-1:1),navItems.length-1))].focus();return;}
-    if((navIndex>=0&&event.key==="ArrowDown")||(active===document.body&&event.key==="ArrowDown")){event.preventDefault();focusCard(0);}
+    if(navIndex>=0&&(event.key==="ArrowLeft"||event.key==="ArrowRight")){
+      event.preventDefault();navItems[Math.max(0,Math.min(navIndex+(event.key==="ArrowLeft"?-1:1),navItems.length-1))].focus();return;
+    }
+    if((navIndex>=0&&event.key==="ArrowDown")||(active===document.body&&event.key==="ArrowDown")||
+       (active===$("search-input")&&event.key==="ArrowDown")){
+      event.preventDefault();focusCard(0);return;
+    }
+    const activeView=document.querySelector(".view.active");
+    if(!activeView||!activeView.contains(active))return;
+    const candidates=Array.from(activeView.querySelectorAll("button:not(:disabled)")).filter(node=>node!==active&&node.getClientRects().length>0);
+    if(!candidates.length)return;
+    const a=active.getBoundingClientRect(),ax=a.left+a.width/2,ay=a.top+a.height/2;
+    const vector={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
+    let best=null,bestScore=Infinity;
+    for(const node of candidates){
+      const r=node.getBoundingClientRect(),dx=r.left+r.width/2-ax,dy=r.top+r.height/2-ay;
+      const primary=dx*vector[0]+dy*vector[1];
+      if(primary<=3)continue;
+      const cross=Math.abs(dx*vector[1]-dy*vector[0]);
+      const score=primary+cross*1.65+Math.hypot(dx,dy)*.08;
+      if(score<bestScore){bestScore=score;best=node;}
+    }
+    if(best){event.preventDefault();best.focus({preventScroll:false});}
   });
   if(window.chrome?.webview)window.chrome.webview.addEventListener("message",event=>{
     const message=event.data||{};
