@@ -325,9 +325,9 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
                     draw_text(52,615,notice.empty()?"L/R: anterior/siguiente | Y: cambiar audio":notice,cyan,1150);
                     draw_text(52,650,"Opciones "+std::to_string(first+1)+"-"+std::to_string(std::min(first+10,static_cast<int>(rows.size())))+" / "+std::to_string(rows.size())+"  |  Arriba/abajo: navegar",muted,1150);
                 }else{
-                    rounded_fill({48,542,142,27},paused?SDL_Color{116,79,35,225}:SDL_Color{20,104,91,220},13);
-                    draw_text(61,546,paused?"Ⅱ  PAUSADO":"●  EN REPRODUCCIÓN",white,125);
-                    draw_text(210,545,options.title.empty()?"Xuper TV":options.title,white,790);
+                    rounded_fill({48,542,176,27},paused?SDL_Color{116,79,35,225}:SDL_Color{20,104,91,220},13);
+                    draw_text(61,546,paused?"Ⅱ  PAUSADO":"●  REPRODUCIENDO",white,158);
+                    draw_text(242,545,options.title.empty()?"Xuper TV":options.title,white,750);
                     rounded_fill({1040,542,174,29},{23,48,69,230},13);
                     draw_text(1054,547,"VOL "+std::to_string(static_cast<int>(property("volume")))+"%",cyan,145);
                     draw_text(52,585,"ESPACIO: pausa   X: opciones   Y: audio   S: subtítulos   ←/→: 10 s   ZL/ZR: 60 s",muted,1145);
