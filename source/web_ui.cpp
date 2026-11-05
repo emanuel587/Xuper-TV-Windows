@@ -287,13 +287,33 @@ void WebUi::set_visible(bool visible) {
                 RECT bounds{};GetClientRect(parent,&bounds);
                 SetWindowPos(window,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
                              SWP_NOZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW);
-                SetForegroundWindow(parent);
-            }else ShowWindow(window,visible?SW_SHOW:SW_HIDE);
+                SetForegroundWindow(parent);SetFocus(window);
+            }else{
+                ShowWindow(window,visible?SW_SHOW:SW_HIDE);
+                if(parent&&!visible){SetForegroundWindow(parent);SetFocus(parent);}
+            }
         }
     };
     auto future=task->completed.get_future();
     if(webview_dispatch(handle,&dispatch_task,task)<0){delete task;return;}
     future.wait_for(std::chrono::seconds(3));
+}
+
+void WebUi::resize() {
+    webview_t handle=nullptr;
+    {std::lock_guard<std::mutex> lock(mutex_);handle=static_cast<webview_t>(handle_);}
+    if(!handle)return;
+    auto* task=new DispatchTask;
+    task->work=[](webview_t w){
+        HWND window=static_cast<HWND>(webview_get_window(w));
+        HWND parent=window?GetParent(window):nullptr;
+        if(window&&parent){
+            RECT bounds{};GetClientRect(parent,&bounds);
+            SetWindowPos(window,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
+                         SWP_NOZORDER|SWP_NOACTIVATE);
+        }
+    };
+    if(webview_dispatch(handle,&dispatch_task,task)<0)delete task;
 }
 
 void WebUi::stop() {
