@@ -294,18 +294,18 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
             if(options.font&&(menu||paused||now<visible_until)){
                 SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_SetRenderDrawColor(renderer,5,11,20,242);
                 SDL_Rect panel{20,menu?35:526,1240,menu?650:175};SDL_RenderFillRect(renderer,&panel);
-                SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect edge{20,menu?35:526,1240,3};SDL_RenderFillRect(renderer,&edge);
+                SDL_SetRenderDrawColor(renderer,54,203,230,255);SDL_Rect edge{20,menu?35:526,1240,3};SDL_RenderFillRect(renderer,&edge);
                 const SDL_Color white{244,249,255,255},cyan{91,220,244,255},muted{166,187,207,255};
                 if(menu){draw_text(48,48,options.title.empty()?"Reproductor":options.title,white);
                     draw_text(48,84,page==0?"A: elegir | izq/der: ajustar | B: volver":"A: seleccionar | B: ajustes",muted);
                     auto rows=menu_rows();const int start=selection/10*10;
                     for(int i=start;i<static_cast<int>(rows.size())&&i<start+10;++i){const int y=130+(i-start)*41;
                         if(i==selection){SDL_SetRenderDrawColor(renderer,24,83,112,235);SDL_Rect highlight{35,y-2,1207,39};SDL_RenderFillRect(renderer,&highlight);
-                            SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect marker{35,y-2,4,39};SDL_RenderFillRect(renderer,&marker);}
+                            SDL_SetRenderDrawColor(renderer,54,203,230,255);SDL_Rect marker{35,y-2,4,39};SDL_RenderFillRect(renderer,&marker);}
                         draw_text(50,y,(i==selection?"> ":"  ")+rows[i].label,i==selection?cyan:white,1150);}
                     draw_text(48,650,"Opciones "+std::to_string(start+1)+"-"+std::to_string(std::min(start+10,static_cast<int>(rows.size())))+" / "+std::to_string(rows.size())+"  |  Arriba/abajo: navegar",muted);
                     draw_text(48,560,notice.empty()?"L/R: anterior/siguiente | Y: cambiar audio":notice,cyan,1150);
-                }else{draw_text(44,532,(paused?"Ⅱ  EN PAUSA  ":"▶  REPRODUCIENDO  ")+options.title,white);draw_text(44,573,"ESPACIO: pausa   X: opciones   Y: audio   S: subtitulos   ←/→: 10 s   ZL/ZR: 60 s",muted);}
+                }else{draw_text(44,532,(paused?"Ⅱ  EN PAUSA  ":"▶  REPRODUCIENDO  ")+options.title,white);draw_text(44,573,"ESPACIO: pausa   X: opciones   Y: audio   S: subtitulos   ←/→: 10 s   ZL/ZR: 60 s",muted,930);draw_text(1030,573,"VOL "+std::to_string(static_cast<int>(property("volume")))+"%",cyan,170);}
                 const double pos=property("time-pos"),duration=property("duration");
                 draw_text(48,menu?606:612,clock(pos)+(duration>0?" / "+clock(duration):"  •  EN VIVO"),white);
                 SDL_SetRenderDrawColor(renderer,51,69,85,255);SDL_Rect bar{330,menu?619:635,870,6};SDL_RenderFillRect(renderer,&bar);
