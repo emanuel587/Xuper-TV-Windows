@@ -131,16 +131,7 @@ int main(int argc,char** argv){
             if(event.type==SDL_QUIT)running=false;
             if(event.type==SDL_WINDOWEVENT)redraw=true;
             if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
-#ifndef __SWITCH__
-            // Desktop interaction: keep the pointer hover synchronized with the current item
-            // and sidebar, rather than requiring console-style directional navigation.
-            if(event.type==SDL_MOUSEMOTION){
-                const int x=event.motion.x,y=event.motion.y;
-                const int hovered=view.hit(catalog,selected,x,y);
-                if(hovered>=0&&static_cast<size_t>(hovered)!=selected){selected=static_cast<size_t>(hovered);view.nav_focus=-1;redraw=true;}
-                else if(hovered<=-2&&view.nav_focus!=-hovered-2){view.nav_focus=-hovered-2;redraw=true;}
-            }
-#endif
+// El puntero no cambia el foco al pasar por encima; solo un clic selecciona.
             if(event.type==SDL_MOUSEBUTTONDOWN||event.type==SDL_FINGERDOWN){
                 const int x=event.type==SDL_FINGERDOWN?int(event.tfinger.x*1280):event.button.x,y=event.type==SDL_FINGERDOWN?int(event.tfinger.y*720):event.button.y;
                 if(donating){back=true;continue;}const int hit=view.hit(catalog,selected,x,y);
@@ -148,7 +139,7 @@ int main(int argc,char** argv){
             }
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
-                    case SDLK_ESCAPE:running=false;break;
+                    case SDLK_ESCAPE:back=true;if(history.empty())running=false;break;
                     case SDLK_UP:up=true;break;
                     case SDLK_DOWN:down=true;break;
                     case SDLK_LEFT:left=true;break;
