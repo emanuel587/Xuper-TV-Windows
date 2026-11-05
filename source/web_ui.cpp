@@ -3,6 +3,7 @@
 #include "web_ui.hpp"
 #include <webview/webview.h>
 #include <windows.h>
+#include <SDL_syswm.h>
 #include <objbase.h>
 #include <fstream>
 #include <future>
@@ -80,7 +81,16 @@ void dispatch_task(webview_t w,void* arg) {
 
 WebUi::~WebUi(){stop();}
 
-bool WebUi::start(std::string& error) {
+bool WebUi::start(std::string& error,SDL_Window* parent) {
+    parent_window_=nullptr;
+    if(parent) {
+        SDL_SysWMinfo info{};SDL_VERSION(&info.version);
+        if(!SDL_GetWindowWMInfo(parent,&info)||info.subsystem!=SDL_SYSWM_WINDOWS) {
+            error="No se pudo obtener la ventana principal de Windows para integrar el reproductor.";
+            return false;
+        }
+        parent_window_=info.info.win.window;
+    }
     if(thread_.joinable())return active();
     event_type_=SDL_RegisterEvents(1);
     if(event_type_==static_cast<Uint32>(-1)) {
@@ -116,6 +126,21 @@ void WebUi::thread_main() {
     }
 
     webview_t webview=webview_create(0,nullptr);
+    if(webview&&parent_window_) {
+        HWND child=static_cast<HWND>(webview_get_window(webview));
+        HWND parent=static_cast<HWND>(parent_window_);
+        if(child&&parent) {
+            SetLastError(0);
+            SetParent(child,parent);
+            LONG_PTR style=GetWindowLongPtr(child,GWL_STYLE);
+            style=(style&~static_cast<LONG_PTR>(WS_POPUP|WS_CAPTION|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_SYSMENU))|
+                  WS_CHILD|WS_CLIPSIBLINGS|WS_CLIPCHILDREN;
+            SetWindowLongPtr(child,GWL_STYLE,style);
+            RECT bounds{};GetClientRect(parent,&bounds);
+            SetWindowPos(child,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
+                         SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED|SWP_SHOWWINDOW);
+        }
+    }
     if(!webview) {
         std::lock_guard<std::mutex> lock(mutex_);
         startup_error_="No se encontró WebView2 Runtime. Instala Microsoft Edge WebView2 Runtime.";
@@ -256,7 +281,15 @@ void WebUi::set_visible(bool visible) {
     auto* task=new DispatchTask;
     task->work=[visible](webview_t w){
         HWND window=static_cast<HWND>(webview_get_window(w));
-        if(window){ShowWindow(window,visible?SW_SHOW:SW_HIDE);if(visible)SetForegroundWindow(window);}
+        if(window){
+            HWND parent=GetParent(window);
+            if(parent&&visible){
+                RECT bounds{};GetClientRect(parent,&bounds);
+                SetWindowPos(window,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
+                             SWP_NOZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW);
+                SetForegroundWindow(parent);
+            }else ShowWindow(window,visible?SW_SHOW:SW_HIDE);
+        }
     };
     auto future=task->completed.get_future();
     if(webview_dispatch(handle,&dispatch_task,task)<0){delete task;return;}
