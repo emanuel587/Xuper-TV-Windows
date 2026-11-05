@@ -231,7 +231,15 @@ int main(int argc,char** argv){
         back|=(buttons&HidNpadButton_B)!=0;
         next|=(buttons&HidNpadButton_R)!=0;previous|=(buttons&HidNpadButton_L)!=0;
 #endif
-        if(donating){if(back||play||login){donating=false;redraw=true;}SDL_Delay(10);continue;}
+        if(donating){
+            if(back||play||login){
+                donating=false;redraw=true;
+#ifdef _WIN32
+                if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+#endif
+            }
+            SDL_Delay(10);continue;
+        }
         if(view.nav_focus>=0){
             if(up){view.nav_focus=(view.nav_focus+5)%6;redraw=true;}if(down){view.nav_focus=(view.nav_focus+1)%6;redraw=true;}
             if(right||back){view.nav_focus=-1;redraw=true;back=false;}if(play){nav_action=view.nav_focus;play=false;}
@@ -258,7 +266,13 @@ int main(int argc,char** argv){
             selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
         }
         if(nav_action>0){
-            if(nav_action==5){donating=true;redraw=true;continue;}
+            if(nav_action==5){
+                donating=true;
+#ifdef _WIN32
+                if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+#endif
+                view.donation();redraw=true;continue;
+            }
             if(nav_action==4){history.emplace_back(catalog,selected);catalog={};catalog.title="Favoritos";catalog.entries=saved.favorites;selected=0;view.active_nav=4;view.nav_focus=-1;redraw=true;}
             else if(session){
                 if(nav_action==1){history.emplace_back(catalog,selected);catalog={};catalog.title="TV en vivo";for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);selected=0;}
@@ -300,6 +314,9 @@ int main(int argc,char** argv){
             catalog=std::move(history.back().first);selected=history.back().second;history.pop_back();
             status="Elige un titulo o canal.";if(history.empty())view.active_nav=0;redraw=true;
         }
+#ifdef _WIN32
+        else if(back&&webui_active&&!donating&&history.empty())running=false;
+#endif
         if(!catalog.entries.empty()){
             const size_t cols=view.columns(catalog),page=view.page_size(catalog);
             if(up){selected=selected>=cols?selected-cols:selected;redraw=true;}
