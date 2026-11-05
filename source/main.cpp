@@ -300,7 +300,9 @@ int main(int argc,char** argv){
             if(session){catalog=home();if(!root_catalog.entries.empty())status="Elige que quieres ver. X: buscar en todo el catalogo.";else status+=" Pulsa Y para reintentar el catalogo.";}else {catalog.title="Sin conexion";status+=" Pulsa Y para reintentar.";}
             selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
         }
-        if(nav_action>0){
+        if(nav_action==0){
+            catalog=home();selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
+        }else if(nav_action>0){
             if(nav_action==5){
                 donating=true;
 #ifdef _WIN32
