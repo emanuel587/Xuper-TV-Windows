@@ -43,7 +43,7 @@ bool View::open(std::string& error){
 #endif
     if(SDL_Init(sdl_flags)!=0){error=SDL_GetError();return false;}
     if(TTF_Init()!=0){error=TTF_GetError();return false;}
-    window=SDL_CreateWindow("Xuper TV para Windows",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,1440,810,SDL_WINDOW_RESIZABLE);
+    window=SDL_CreateWindow("Xuper TV para Windows",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,1280,720,SDL_WINDOW_RESIZABLE);
     if(!window){error=SDL_GetError();return false;}
     renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
     if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
@@ -138,8 +138,7 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
         text(282,170,"Tu mundo de",white,600,large,56);
         text(282,218,"series, peliculas y TV",{218,190,255,255},660,large,58);
         text(286,276,"Elige una categoria y empieza a disfrutar.",muted,650,small,24);
-        rounded(renderer,{1000,247,205,42},accent,12);
-        text(1023,255,"EXPLORAR AHORA",white,180,small,28);
+        text(1000,263,"CANALES  •  PELICULAS  •  SERIES",white,245,small,24);
         text(260,324,"Explora el catalogo",white,720,heading,34);
         top=365;
     }
