@@ -85,7 +85,7 @@ int main(int argc,char** argv){
 #ifdef _WIN32
     xs::WebUi webui;
     const bool webui_active=webui.start(error,view.window);
-    else if(!error.empty())status="WebView2 no disponible: "+error;
+    if(!webui_active&&!error.empty())status="WebView2 no disponible: "+error;
 #endif
     xs::PlaybackHistory playback_history;
     xs::SavedCatalog saved(
