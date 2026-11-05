@@ -13,7 +13,33 @@
     category:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     favorite:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/>'
   };
-  const svg = (path) => { const el = document.createElementNS("http://www.w3.org/2000/svg","svg"); el.setAttribute("viewBox","0 0 24 24"); el.innerHTML = path; return el; };
+
+  const posterPalettes={movie:["#172d46","#e6a75d"],series:["#242348","#bc8bd9"],channel:["#123e55","#68c6e4"],episode:["#49302a","#e5a06f"],category:["#173e3b","#6cc6a9"]};
+  const artUri=(item={})=>{
+    const kind=item.kind||"asset",colors=posterPalettes[kind==="asset"?"movie":kind]||posterPalettes.movie;
+    const title=String(item.title||"XUPER TV").replace(/[&<>"]/g,"").slice(0,26);
+    const wide=kind==="channel"||kind==="category",w=wide?640:420,h=wide?360:630;
+    const svgText='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="'+colors[0]+'"/><stop offset="1" stop-color="#080d16"/></linearGradient><radialGradient id="r"><stop stop-color="'+colors[1]+'" stop-opacity=".75"/><stop offset="1" stop-color="'+colors[1]+'" stop-opacity="0"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="'+w*.72+'" cy="'+h*.28+'" r="'+h*.43+'" fill="url(#r)"/><path d="M0 '+h*.78+' Q'+w*.35+' '+h*.53+' '+w+' '+h*.83+' V'+h+' H0Z" fill="#050911" fill-opacity=".68"/><path d="M'+w*.08+' '+h*.18+' L'+w*.36+' '+h*.08+' L'+w*.58+' '+h*.32+' L'+w*.31+' '+h*.57+'Z" fill="'+colors[1]+'" fill-opacity=".18"/><text x="'+w*.08+'" y="'+h*.78+'" fill="#fff" font-family="Segoe UI,Arial" font-size="'+(wide?34:29)+'" font-weight="800">'+title+'</text><text x="'+w*.08+'" y="'+h*.87+'" fill="'+colors[1]+'" font-family="Arial" font-size="'+(wide?15:13)+'" letter-spacing="4">XUPER ORIGINAL</text></svg>';
+    return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svgText);
+  };
+  const DEMO_ITEMS=[
+    {kind:"category",title:"TV en vivo",description:"Canales para disfrutar en directo.",demo:true},
+    {kind:"category",title:"Películas",description:"Grandes historias para cada momento.",demo:true},
+    {kind:"category",title:"Series",description:"Historias que continúan capítulo a capítulo.",demo:true},
+    {kind:"category",title:"Kids y Anime",description:"Diversión para toda la familia.",demo:true},
+    {kind:"channel",title:"Cine X",description:"Canal de cine · señal de demostración",demo:true},
+    {kind:"channel",title:"Noticias 24",description:"Noticias · señal de demostración",demo:true},
+    {kind:"channel",title:"Deportes+",description:"Deportes · señal de demostración",demo:true},
+    {kind:"channel",title:"Música HD",description:"Música · señal de demostración",demo:true},
+    {kind:"asset",title:"Horizonte perdido",description:"Aventura · 2026 · Imagen de muestra",demo:true},
+    {kind:"asset",title:"La última misión",description:"Acción · 2025 · Imagen de muestra",demo:true},
+    {kind:"asset",title:"Reino de sombras",description:"Fantasía · 2026 · Imagen de muestra",demo:true},
+    {kind:"asset",title:"Código infinito",description:"Ciencia ficción · 2025 · Imagen de muestra",demo:true},
+    {kind:"episode",title:"Más allá del tiempo",description:"Serie · Temporada 1 · Episodio 1 · Muestra",demo:true},
+    {kind:"episode",title:"Distrito central",description:"Serie · Temporada 2 · Episodio 3 · Muestra",demo:true},
+    {kind:"episode",title:"Pequeños exploradores",description:"Kids · Episodio de muestra",demo:true}
+  ];
+\n  const svg = (path) => { const el = document.createElementNS("http://www.w3.org/2000/svg","svg"); el.setAttribute("viewBox","0 0 24 24"); el.innerHTML = path; return el; };
   const notify = (message) => { toast.textContent=message; toast.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove("show"),2400); };
   const send = (type,payload={}) => {
     const native = {
@@ -55,17 +81,17 @@
   const openSearch=()=>{if(!searchDialog.open){searchDialog.showModal();$("#search-query").focus();}};
   $("#search").addEventListener("click",openSearch);
   $("#search-form").addEventListener("submit",e=>{e.preventDefault();const query=$("#search-query").value.trim();if(!query)return;searchDialog.close();send("search-query",{query});});
-  $("#watch").addEventListener("click",()=>{if(items.length)send("play-selected");else notify("Primero conecta el servicio para cargar tu catálogo.");});
-  $("#favorite").addEventListener("click",()=>send("favorite"));
+  $("#watch").addEventListener("click",()=>{if(items[selectedIndex]?.demo)showDetails(items[selectedIndex]);else if(items.length)send("play-selected");else notify("Primero conecta el servicio para cargar tu catálogo.");});
+  $("#favorite").addEventListener("click",()=>{if(items[selectedIndex]?.demo)notify("Elemento de muestra: conecta el servicio para guardar favoritos.");else send("favorite");});
   $("#more").addEventListener("click",()=>showDetails(items[selectedIndex]));
-  $("#details-watch").addEventListener("click",()=>{detailsDialog.close();send("play-selected");});
+  $("#details-watch").addEventListener("click",()=>{detailsDialog.close();if(items[selectedIndex]?.demo)notify("Contenido visual de demostración; no reproduce vídeo.");else send("play-selected");});
 
   function showDetails(item) {
     if(!item)return notify("Selecciona un título del catálogo.");
     $("#details-title").textContent=item.title||"Sin título";
     $("#details-description").textContent=item.description||"Contenido disponible en tu catálogo de Xuper TV.";
     $("#details-type").textContent=typeLabel(item);
-    $("#details-poster").style.backgroundImage=item.artwork?'url("'+item.artwork.replace(/["\\]/g,"")+'")':"";
+    $("#details-poster").style.backgroundImage=item.artwork||item.demo?'url("'+item.artwork.replace(/["\\]/g,"")+'")':"";
     detailsDialog.showModal();
   }
   function typeLabel(item){if(item.kind==="channel")return "CANAL EN VIVO";if(item.kind==="asset")return "CATÁLOGO";if(item.kind==="episode")return "EPISODIO";return "EXPLORAR";}
@@ -107,7 +133,7 @@
     }else art.append(makeFallback(item.kind,item.title));
     const title=document.createElement("span");title.className="catalog-title";title.textContent=item.title||"Sin título";card.append(art,title);
     if(item.kind==="channel"){const sub=document.createElement("span");sub.className="catalog-subtitle";sub.textContent="Disponible en TV en vivo";card.append(sub);}
-    card.addEventListener("click",()=>{selectedIndex=index;send("select-item",{index});});
+    card.addEventListener("click",()=>{selectedIndex=index;if(item.demo){setHero(item,index);showDetails(item);}else send("select-item",{index});});
     return card;
   }
   function makeShelf(label,subtitle,entries){
@@ -131,13 +157,13 @@
       const name=document.createElement("strong");name.textContent=item.title||"Explorar";
       const subtitle=document.createElement("span");subtitle.textContent=key==="live"?"Canales y televisión en directo":key==="movie"?"Historias para disfrutar":"Explora el catálogo disponible";
       copy.append(name,subtitle);const arrow=document.createElement("span");arrow.className="quick-arrow";arrow.textContent="›";
-      card.append(badge,copy,arrow);card.addEventListener("click",()=>send("select-item",{index}));quickGrid.append(card);
+      card.append(badge,copy,arrow);card.addEventListener("click",()=>{if(item.demo){selectedIndex=index;setHero(item,index);showDetails(item);}else send("select-item",{index});});quickGrid.append(card);
     });
     quickSection.hidden=entries.length===0;
   }
   function renderCatalog(catalogItems=[],selected=0){
     const restoreCardFocus=document.activeElement?.classList?.contains("catalog-card");
-    items=Array.isArray(catalogItems)?catalogItems:[];selectedIndex=Math.max(0,Math.min(Number(selected)||0,Math.max(0,items.length-1)));
+    items=Array.isArray(catalogItems)?catalogItems:[];if(!items.length)items=DEMO_ITEMS;selectedIndex=Math.max(0,Math.min(Number(selected)||0,Math.max(0,items.length-1)));
     railRoot.replaceChildren();
     if(!items.length){
       setHero(null,0);quickSection.hidden=true;
