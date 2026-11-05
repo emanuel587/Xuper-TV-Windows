@@ -68,6 +68,9 @@ if(WIN32)
   target_include_directories(XuperTV PRIVATE ${WEBVIEW_INCLUDE_DIR} ${WEBVIEW2_INCLUDE_DIR})
   target_sources(XuperTV PRIVATE source/web_ui.cpp)
   target_link_libraries(XuperTV PRIVATE advapi32 ole32 shell32 shlwapi user32 version)
+  add_custom_command(TARGET XuperTV POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/web-ui ${CMAKE_CURRENT_BINARY_DIR}/web-ui)
 endif()
 
 if(XUPER_BUILD_TESTS)
