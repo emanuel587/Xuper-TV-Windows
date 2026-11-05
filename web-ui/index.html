@@ -27,7 +27,7 @@
         <button class="nav-item" data-page="Series"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></span><span>Series</span></button>
         <button class="nav-item" data-page="Favoritos"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span><span>Favoritos</span></button>
       </div>
-      <div class="sidebar-bottom"><div class="sidebar-rule"></div><button class="nav-item" data-page="Ajustes"><span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2z"/></svg></span><span>Ajustes</span></button><div class="sidebar-foot">XUPER TV <span>WINDOWS</span></div></div>
+      <div class="sidebar-bottom"><div class="sidebar-rule"></div><button class="nav-item" data-page="Apoyar"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6z"/></svg></span><span>Apoyar</span></button><div class="sidebar-foot">XUPER TV <span>WINDOWS</span></div></div>
     </aside>
     <main class="content" id="content">
       <section class="welcome"><div><div class="eyebrow"><span class="eyebrow-line"></span> TU ENTRETENIMIENTO</div><h1>Descubre algo <em>extraordinario.</em></h1><p>Todo lo que te gusta, en un solo lugar.</p></div><div class="date-chip"><span class="status-pulse"></span><span id="service-status">Tu experiencia</span></div></section>
@@ -46,6 +46,14 @@
       <footer class="content-footer"><span>Una experiencia para disfrutar</span><span class="footer-mark">X<span>·</span></span></footer>
     </main>
   </div>
+  <dialog class="app-dialog" id="search-dialog">
+    <form method="dialog" class="dialog-close-row"><span class="dialog-kicker">BÚSQUEDA GLOBAL</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
+    <form id="search-form"><label for="search-query">¿Qué quieres ver?</label><div class="search-field"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="search-query" name="query" type="search" placeholder="Canales, películas o series..." autocomplete="off" required><button type="submit">Buscar</button></div><p class="dialog-hint">Busca en todo el catálogo disponible.</p></form>
+  </dialog>
+  <dialog class="app-dialog details-dialog" id="details-dialog">
+    <form method="dialog" class="dialog-close-row"><span class="dialog-kicker">DETALLES</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
+    <h2 id="details-title"></h2><p id="details-description"></p><button class="primary-action" id="details-watch"><svg viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg> Reproducir</button>
+  </dialog>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
