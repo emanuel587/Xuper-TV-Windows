@@ -125,6 +125,9 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
     const bool live=!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel;
     const bool movies=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="1";
     const bool series=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="0";
+    const bool live=!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel;
+    const bool movies=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="1";
+    const bool series=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="0";
     text(258,25,c.title.empty()?"Explorar":c.title,white,720,heading,42);
     text(260,68,home?"DESCUBRE ALGO NUEVO":live?"CANALES DISPONIBLES":movies?"PELICULAS Y ESTRENOS":series?"SERIES PARA MARATONEAR":full_memory?"TU CATALOGO":"MODO ALBUM",muted,650,small,24);
     text(1080,31,"⌕  X  BUSCAR",muted,170,small,28);
