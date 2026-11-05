@@ -119,8 +119,8 @@ void View::splash(const std::string& status){
     text(405,560,"Preparando tu experiencia...",muted,680,small);
     SDL_RenderPresent(renderer);
 }
-int View::columns(const Catalog&)const{return 5;}
-int View::page_size(const Catalog&)const{return 5;}
+int View::columns(const Catalog&)const{return 1;}
+int View::page_size(const Catalog&)const{return 1;}
 bool View::animating()const{return SDL_GetTicks()-animation_started<420;}
 
 static void icon(SDL_Renderer* r,int kind,int cx,int cy,SDL_Color color,int scale=1){
@@ -171,7 +171,7 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
     // Navegacion lateral: opciones reales del port, sin inventar secciones no soportadas.
     rect({0,68,205,652},{13,17,25,255});
     rect({204,68,1,652},{40,47,59,255});
-    const char* labels[]={"TV","DESTACADOS","PELICULA","SERIES","FAVORITOS","APOYAR"};
+    const char* labels[]={"DESTACADOS","TV","PELICULA","SERIES","FAVORITOS","APOYAR"};
     const int icons[]={0,1,2,3,4,14};
     text(24,96,"MENU PRINCIPAL",{112,125,145,255},165,small,22);
     for(int i=0;i<6;++i){
@@ -220,10 +220,11 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
     // Lista vertical de canales a la derecha dentro de la misma escena, al estilo de la referencia.
     text(main_x,500,is_live?"CANALES DISPONIBLES":home?"ACCESO RAPIDO":is_movie?"PELICULAS":"CONTENIDO",white,500,heading,30);
     text(main_x+830,506,"VER TODO  →",{132,183,221,255},190,small,22);
-    const int count=std::min(6,static_cast<int>(c.entries.size()));
+    const size_t list_start=selected>5?selected-5:0;
+    const int count=static_cast<int>(std::min<size_t>(6,c.entries.size()-std::min(list_start,c.entries.size())));
     const int card_gap=9,card_y=540,card_h=27;
     for(int n=0;n<count;++n){
-        const size_t idx=static_cast<size_t>(n);
+        const size_t idx=list_start+static_cast<size_t>(n);
         const Entry& e=c.entries[idx];
         const bool chosen=idx==selected;
         const int y=card_y+n*(card_h+card_gap);
@@ -254,7 +255,8 @@ int View::hit(const Catalog& c,size_t selected,int x,int y)const{
     const int main_x=225,main_w=1028;
     if(x>=main_x&&x<=main_x+main_w&&y>=540&&y<540+6*36){
         const int row=(y-540)/36;
-        const size_t idx=static_cast<size_t>(row);
+        const size_t list_start=selected>5?selected-5:0;
+        const size_t idx=list_start+static_cast<size_t>(row);
         if(idx<c.entries.size())return static_cast<int>(idx);
     }
     if(x>=main_x&&x<=main_x+main_w&&y>=166&&y<=476&&selected<c.entries.size())return static_cast<int>(selected);
