@@ -191,6 +191,8 @@
     if(!cards.length)return; cards[Math.max(0,Math.min(index,cards.length-1))].focus();
   }
   document.addEventListener("keydown",event=>{
+    if(event.ctrlKey&&event.key.toLowerCase()==="q"){event.preventDefault();send("quit");return;}
+    if(event.key==="F11"){event.preventDefault();send("fullscreen");return;}
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){event.preventDefault();$("search-input").focus();return;}
     if(event.key==="Escape"){if(detailsDialog.open)detailsDialog.close();else send("back");return;}
     if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key)||detailsDialog.open)return;
