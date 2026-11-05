@@ -121,8 +121,8 @@ int main(int argc,char** argv){
             SDL_Event e;while(SDL_PollEvent(&e)){
             if(e.type==SDL_QUIT){running=false;cancel_task=true;}
             if(e.type==SDL_WINDOWEVENT&&e.window.event==SDL_WINDOWEVENT_CLOSE){running=false;cancel_task=true;}
-            if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b||
-               (e.key.keysym.sym==SDLK_q&&(SDL_GetModState()&KMOD_CTRL))))cancel_task=true;
+            if(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_q&&(SDL_GetModState()&KMOD_CTRL)){running=false;cancel_task=true;}
+            else if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b))cancel_task=true;
 #ifndef __SWITCH__
             if(xs::gamepad_translate(e)==xs::Pad::B)cancel_task=true;
 #endif
