@@ -197,10 +197,27 @@ void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& statu
     for(size_t i=0;i<count;++i) {
         if(i)json<<',';
         const auto& entry=catalog.entries[i];
+        const char* kind_name="media";
+        switch(entry.kind) {
+            case EntryKind::Media: kind_name="media"; break;
+            case EntryKind::Category: kind_name="category"; break;
+            case EntryKind::Channel: kind_name="channel"; break;
+            case EntryKind::Section: kind_name="section"; break;
+            case EntryKind::VodCategory: kind_name="vod-category"; break;
+            case EntryKind::Asset: kind_name="asset"; break;
+            case EntryKind::Episode: kind_name="episode"; break;
+            case EntryKind::SearchPage: kind_name="search-page"; break;
+            case EntryKind::VodPage: kind_name="vod-page"; break;
+            case EntryKind::LiveSection: kind_name="live-section"; break;
+            case EntryKind::SearchAction: kind_name="search-action"; break;
+            case EntryKind::Donation: kind_name="donation"; break;
+            case EntryKind::Favorites: kind_name="favorites"; break;
+            case EntryKind::Resume: kind_name="resume"; break;
+        }
         json<<"{\"title\":"<<json_quote(entry.title)
             <<",\"artwork\":"<<json_quote(entry.artwork)
             <<",\"description\":"<<json_quote(entry.description)
-            <<",\"kind\":"<<json_quote(entry.kind==EntryKind::Channel?"channel":entry.kind==EntryKind::Episode?"episode":entry.kind==EntryKind::Asset?"asset":"category")
+            <<",\"kind\":"<<json_quote(kind_name)
             <<'}';
     }
     json<<']';
