@@ -110,6 +110,7 @@
     document.getElementById("hero-description").textContent =
       current.description || "Selecciona para comenzar a disfrutar.";
     const backdrop = document.querySelector(".hero-backdrop");
+    if (current.artwork) { const preload = new Image(); preload.decoding = "async"; preload.fetchPriority = "high"; preload.src = current.artwork; }
     backdrop.style.backgroundImage = current.artwork
       ? 'linear-gradient(90deg,rgba(9,15,24,.9),rgba(9,15,24,.22)),url("' + current.artwork.replace(/"/g, "%22") + '")'
       : "";
@@ -127,7 +128,10 @@
         const img = document.createElement("img");
         img.src = item.artwork;
         img.alt = "";
-        img.loading = "lazy";
+        img.loading = index === selectedIndex ? "eager" : "lazy";
+        img.decoding = "async";
+        img.fetchPriority = index === selectedIndex ? "high" : "auto";
+        img.onerror = () => { img.remove(); const fallback = document.createElement("span"); fallback.textContent = "X"; fallback.className = "catalog-fallback"; art.append(fallback); };
         art.append(img);
       } else {
         const fallback = document.createElement("span");
