@@ -16,6 +16,9 @@
 #include <atomic>
 #include "platform.hpp"
 #include "gamepad.hpp"
+#ifdef _WIN32
+#include "web_ui.hpp"
+#endif
 #ifdef __SWITCH__
 #include <switch.h>
 
@@ -79,6 +82,12 @@ int main(int argc,char** argv){
 #endif
         return 1;
     }
+#ifdef _WIN32
+    xs::WebUi webui;
+    const bool webui_active=webui.start(error);
+    if(webui_active)SDL_HideWindow(view.window);
+    else if(!error.empty())status="WebView2 no disponible: "+error;
+#endif
     xs::PlaybackHistory playback_history;
     xs::SavedCatalog saved(
 #ifdef __SWITCH__
@@ -88,6 +97,9 @@ int main(int argc,char** argv){
 #endif
     );
     size_t selected=0;bool running=true,redraw=true,autoload=true,donating=false;
+#ifdef _WIN32
+    std::string web_search_query;
+#endif
     xs::Catalog root_catalog;
     std::atomic<bool> cancel_task{false};std::atomic<size_t> task_done{0},task_total{0};
     std::shared_ptr<xs::ServiceSession> session;
@@ -101,6 +113,9 @@ int main(int argc,char** argv){
     };
     auto load=[&](auto task,const std::string& message,bool splash=false){
         cancel_task=false;task_done=0;task_total=0;std::atomic<bool> complete{false};
+#ifdef _WIN32
+        if(webui_active)webui.set_status(message);
+#endif
         const auto started=SDL_GetTicks();if(splash)view.splash(message);
         std::thread worker([&]{task();complete.store(true);});
         while(!complete.load()||(splash&&SDL_GetTicks()-started<1100)){
@@ -125,22 +140,51 @@ int main(int argc,char** argv){
         if(!appletMainLoop())break;
 #endif
         if(view.poll_images()||view.animating())redraw=true;
-        if(redraw){view.favorite=!catalog.entries.empty()&&saved.contains(catalog.entries[std::min(selected,catalog.entries.size()-1)]);if(donating)view.donation();else view.draw(catalog,selected,status,full_memory);redraw=false;}
+        if(redraw){
+            view.favorite=!catalog.entries.empty()&&saved.contains(catalog.entries[std::min(selected,catalog.entries.size()-1)]);
+#ifdef _WIN32
+            if(webui_active&&!donating) {
+                static const char* page_names[]={"Inicio","TV en vivo","Películas","Series","Favoritos","Apoyar"};
+                const int page_index=std::max(0,std::min(5,view.active_nav));
+                webui.sync(catalog,selected,status,page_names[page_index]);
+            } else
+#endif
+            {if(donating)view.donation();else view.draw(catalog,selected,status,full_memory);}
+            redraw=false;
+        }
         bool up=false,down=false,left=false,right=false,play=false,reload=false,login=autoload,search=false,back=false,next=false,previous=false,toggle_favorite=false;int nav_action=-1;autoload=false;SDL_Event event;
         while(SDL_PollEvent(&event)){
             if(event.type==SDL_QUIT)running=false;
-            if(event.type==SDL_WINDOWEVENT)redraw=true;
-            if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
-#ifndef __SWITCH__
-            // Desktop interaction: keep the pointer hover synchronized with the current item
-            // and sidebar, rather than requiring console-style directional navigation.
-            if(event.type==SDL_MOUSEMOTION){
-                const int x=event.motion.x,y=event.motion.y;
-                const int hovered=view.hit(catalog,selected,x,y);
-                if(hovered>=0&&static_cast<size_t>(hovered)!=selected){selected=static_cast<size_t>(hovered);view.nav_focus=-1;redraw=true;}
-                else if(hovered<=-2&&view.nav_focus!=-hovered-2){view.nav_focus=-hovered-2;redraw=true;}
+#ifdef _WIN32
+            if(webui_active&&event.type==webui.event_type()){
+                std::unique_ptr<std::string> payload(static_cast<std::string*>(event.user.data1));
+                const std::string value=payload?*payload:std::string{};
+                switch(event.user.code){
+                    case xs::WebUi::Ready: redraw=true; break;
+                    case xs::WebUi::Navigate:
+                        if(value=="Inicio")nav_action=0;
+                        else if(value=="TV en vivo")nav_action=1;
+                        else if(value=="Películas")nav_action=2;
+                        else if(value=="Series")nav_action=3;
+                        else if(value=="Favoritos")nav_action=4;
+                        else if(value=="Apoyar")nav_action=5;
+                        break;
+                    case xs::WebUi::Play: play=true; break;
+                    case xs::WebUi::Search: web_search_query=value;search=!value.empty();break;
+                    case xs::WebUi::SelectItem:
+                        try {const auto index=static_cast<size_t>(std::stoul(value));if(index<catalog.entries.size()){selected=index;play=true;}}
+                        catch(...) {}
+                        break;
+                    case xs::WebUi::Back: back=true;break;
+                    case xs::WebUi::ToggleFavorite: toggle_favorite=true;break;
+                    default:break;
+                }
+                continue;
             }
 #endif
+            if(event.type==SDL_WINDOWEVENT)redraw=true;
+            if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
+// El puntero no cambia el foco al pasar por encima; solo un clic selecciona.
             if(event.type==SDL_MOUSEBUTTONDOWN||event.type==SDL_FINGERDOWN){
                 const int x=event.type==SDL_FINGERDOWN?int(event.tfinger.x*1280):event.button.x,y=event.type==SDL_FINGERDOWN?int(event.tfinger.y*720):event.button.y;
                 if(donating){back=true;continue;}const int hit=view.hit(catalog,selected,x,y);
@@ -148,7 +192,7 @@ int main(int argc,char** argv){
             }
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
-                    case SDLK_ESCAPE:running=false;break;
+                    case SDLK_ESCAPE:back=true;if(history.empty()&&!donating)running=false;break;
                     case SDLK_UP:up=true;break;
                     case SDLK_DOWN:down=true;break;
                     case SDLK_LEFT:left=true;break;
@@ -188,7 +232,15 @@ int main(int argc,char** argv){
         back|=(buttons&HidNpadButton_B)!=0;
         next|=(buttons&HidNpadButton_R)!=0;previous|=(buttons&HidNpadButton_L)!=0;
 #endif
-        if(donating){if(back||play||login){donating=false;redraw=true;}SDL_Delay(10);continue;}
+        if(donating){
+            if(back||play||login){
+                donating=false;redraw=true;
+#ifdef _WIN32
+                if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+#endif
+            }
+            SDL_Delay(10);continue;
+        }
         if(view.nav_focus>=0){
             if(up){view.nav_focus=(view.nav_focus+5)%6;redraw=true;}if(down){view.nav_focus=(view.nav_focus+1)%6;redraw=true;}
             if(right||back){view.nav_focus=-1;redraw=true;back=false;}if(play){nav_action=view.nav_focus;play=false;}
@@ -215,7 +267,13 @@ int main(int argc,char** argv){
             selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
         }
         if(nav_action>0){
-            if(nav_action==5){donating=true;redraw=true;continue;}
+            if(nav_action==5){
+                donating=true;
+#ifdef _WIN32
+                if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+#endif
+                view.donation();redraw=true;continue;
+            }
             if(nav_action==4){history.emplace_back(catalog,selected);catalog={};catalog.title="Favoritos";catalog.entries=saved.favorites;selected=0;view.active_nav=4;view.nav_focus=-1;redraw=true;}
             else if(session){
                 if(nav_action==1){history.emplace_back(catalog,selected);catalog={};catalog.title="TV en vivo";for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);selected=0;}
@@ -236,7 +294,12 @@ int main(int argc,char** argv){
             if(!session)status="Pulsa Y para activar antes de buscar.";
             else{
                 std::string query;
-                if(search_keyboard(view,catalog,selected,full_memory,query)){
+#ifdef _WIN32
+                if(webui_active){query=std::move(web_search_query);web_search_query.clear();}
+                else
+#endif
+                search_keyboard(view,catalog,selected,full_memory,query);
+                if(!query.empty()){
                     xs::BrowseResult result;xs::trace("catalog:search_begin");
                     load([&]{result=xs::service_search_all(session,query,[&](size_t done,size_t total){task_done=done;task_total=total;return !cancel_task.load();});},"Buscando canales, peliculas y series... B: detener TV");status=result.status;
                     xs::trace(result.ok?"catalog:search_loaded":"catalog:search_failed");
@@ -252,6 +315,9 @@ int main(int argc,char** argv){
             catalog=std::move(history.back().first);selected=history.back().second;history.pop_back();
             status="Elige un titulo o canal.";if(history.empty())view.active_nav=0;redraw=true;
         }
+#ifdef _WIN32
+        else if(back&&webui_active&&!donating&&history.empty())running=false;
+#endif
         if(!catalog.entries.empty()){
             const size_t cols=view.columns(catalog),page=view.page_size(catalog);
             if(up){selected=selected>=cols?selected-cols:selected;redraw=true;}
@@ -261,7 +327,13 @@ int main(int argc,char** argv){
             if(previous){selected=selected>=page?selected-page:0;redraw=true;}
             if(play){
                 const xs::Entry entry=catalog.entries[selected];
-                if(entry.kind==xs::EntryKind::Donation){donating=true;redraw=true;continue;}
+                if(entry.kind==xs::EntryKind::Donation){
+                    donating=true;
+#ifdef _WIN32
+                    if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+#endif
+                    view.donation();redraw=true;continue;
+                }
                 if(entry.kind==xs::EntryKind::LiveSection||entry.kind==xs::EntryKind::Favorites||entry.kind==xs::EntryKind::Resume){
                     history.emplace_back(catalog,selected);catalog={};catalog.title=entry.title;
                     if(entry.kind==xs::EntryKind::LiveSection){for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);view.active_nav=1;}
@@ -301,7 +373,15 @@ int main(int argc,char** argv){
                         }
                         for(size_t i=0;i<queue.size();++i){options.items.push_back(catalog.entries[queue[i]].title);if(queue[i]==selected)options.item=static_cast<int>(i);}
                         if(!source.empty()){
-                            xs::PlaybackOutcome outcome;status=xs::play(source,view.renderer,headers,options,&outcome);xs::trace("main:video_returned");
+                            xs::PlaybackOutcome outcome;
+#ifdef _WIN32
+                            if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);}
+#endif
+                            status=xs::play(source,view.renderer,headers,options,&outcome);
+#ifdef _WIN32
+                            if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+#endif
+                            xs::trace("main:video_returned");
                             speed=outcome.speed;volume=outcome.volume;auto_next=outcome.auto_next;
                             if(status.empty()&&(outcome.position>3||outcome.ended)&&!saved.remember(current))xs::trace("catalog:recent_save_failed");
                             if(status.empty()&&!playback_history.save(current.kind==xs::EntryKind::Episode?current.content_id:"",outcome.position,outcome.speed,outcome.volume,outcome.auto_next,outcome.ended))xs::trace((std::string("play:history_save_failed stage=")+playback_history.last_error).c_str());
@@ -322,7 +402,11 @@ int main(int argc,char** argv){
             status=file.is_open()?"Lista local recargada.":"No se pudo abrir catalog.m3u.";redraw=true;}
         SDL_Delay(10);
     }
-    xs::trace("main:close_view");view.close();
+    xs::trace("main:close_view");
+#ifdef _WIN32
+    webui.stop();
+#endif
+    view.close();
 #ifdef __SWITCH__
     if(network)socketExit();
 #endif

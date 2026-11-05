@@ -61,6 +61,18 @@ target_link_libraries(XuperTV PRIVATE
   PkgConfig::SDL2 PkgConfig::SDL2_TTF PkgConfig::MPV PkgConfig::CURL
   PkgConfig::PNG PkgConfig::WEBP JPEG::JPEG ${XUPER_MBEDCRYPTO} Threads::Threads)
 
+if(WIN32)
+  # WebView2 frontend is hosted with the MSYS2 MinGW-compatible webview headers.
+  find_path(WEBVIEW_INCLUDE_DIR NAMES webview/webview.h REQUIRED)
+  find_path(WEBVIEW2_INCLUDE_DIR NAMES WebView2.h REQUIRED)
+  target_include_directories(XuperTV PRIVATE ${WEBVIEW_INCLUDE_DIR} ${WEBVIEW2_INCLUDE_DIR})
+  target_sources(XuperTV PRIVATE source/web_ui.cpp)
+  target_link_libraries(XuperTV PRIVATE advapi32 ole32 shell32 shlwapi user32 version)
+  add_custom_command(TARGET XuperTV POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/web-ui ${CMAKE_CURRENT_BINARY_DIR}/web-ui)
+endif()
+
 if(XUPER_BUILD_TESTS)
   enable_testing()
   function(xuper_test name)

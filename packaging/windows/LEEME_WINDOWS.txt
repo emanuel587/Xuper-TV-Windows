@@ -5,9 +5,10 @@ Xuper TV para Windows
 2. Deja service.template.json junto a XuperTV.exe con su nombre original. No lo
    renombres como service.json. En una instalacion nueva, el programa usa esa
    plantilla para crear service.json con una identidad unica del dispositivo.
-3. Abre XuperTV.exe. Cuando la activacion se complete, se crea device_state.json.
+3. Asegúrate de tener instalado Microsoft Edge WebView2 Runtime. Si falta, instálalo desde https://developer.microsoft.com/microsoft-edge/webview2/ .
+4. Abre XuperTV.exe. Cuando la activacion se complete, se crea device_state.json.
    Conserva service.json y device_state.json al actualizar.
-4. Para trasladar una instalacion ya activada de Switch, copia tambien
+5. Para trasladar una instalacion ya activada de Switch, copia tambien
    service.json y device_state.json desde sdmc:/switch/xuperswitch/ a la carpeta
    de XuperTV.exe, sustituyendo los archivos nuevos solo si quieres conservar
    esa misma identidad.
