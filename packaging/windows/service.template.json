@@ -1,0 +1,16 @@
+{
+  "portal_hosts": [
+    "fuxok.nguvmqhpk.com",
+    "mptec.dhkrxuzcy.com"
+  ],
+  "key_base64": "568e194f-d170-4369-96e8-4a457f641880",
+  "app_id": "com.android.msandroid",
+  "apk_version": "43404",
+  "manifest_version": "43500",
+  "account_type": "auto",
+  "login_type": "2",
+  "password_salt": "ntFT65w6itH!lHCPw7D=@qnsFC5adD28",
+  "password_aes_key": "ntFT65w6itH!lHCP",
+  "language": "es",
+  "ca_file": "cacert.pem"
+}
