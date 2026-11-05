@@ -5,6 +5,7 @@
 #include "catalog.hpp"
 #include <SDL.h>
 #include <atomic>
+#include <cstddef>
 #include <condition_variable>
 #include <mutex>
 #include <string>
