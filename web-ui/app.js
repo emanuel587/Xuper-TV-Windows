@@ -25,9 +25,13 @@
       back:()=>window.xuperBack?.(),
       "show-all":()=>window.xuperNavigate?.(activePage)
     };
-    if(window.chrome?.webview) window.chrome.webview.postMessage({type,...payload});
-    else if(native[type]) { native[type](); }
-    else notify("No se pudo conectar con el motor de Xuper TV.");
+    const bound = {
+      navigate:window.xuperNavigate, "play-selected":window.xuperPlay, favorite:window.xuperFavorite,
+      "search-query":window.xuperSearch, "select-item":window.xuperSelectItem, back:window.xuperBack
+    };
+    if(typeof bound[type] === "function") { native[type]?.(); return; }
+    if(window.chrome?.webview) { window.chrome.webview.postMessage({type,...payload}); return; }
+    notify("No se pudo conectar con el motor de Xuper TV.");
   };
   const titleCase = (s) => (s||"").toString().replace(/\s+/g," ").trim();
   const pageCopy = {
