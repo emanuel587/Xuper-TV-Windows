@@ -240,8 +240,9 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
                     case 24:auto_next=!auto_next;break;
                     case 23:{std::string data,subtitle_error;
                         if(external_index==row.value&&external_id>=0){mpv_set_property_string(mpv,"sid",std::to_string(external_id).c_str());int on=1;mpv_set_property(mpv,"sub-visibility",MPV_FORMAT_FLAG,&on);notice="Subtitulo seleccionado";page=0;selection=2;break;}
-                        SDL_SetRenderDrawColor(renderer,10,17,28,255);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);
-                        SDL_SetRenderDrawColor(renderer,10,17,28,255);SDL_Rect loading{20,550,1240,140};SDL_RenderFillRect(renderer,&loading);
+                        SDL_SetRenderDrawColor(renderer,8,6,16,255);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);
+                        SDL_SetRenderDrawColor(renderer,18,12,29,245);SDL_Rect loading{20,550,1240,140};SDL_RenderFillRect(renderer,&loading);
+                        SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect loading_edge{20,550,1240,3};SDL_RenderFillRect(renderer,&loading_edge);
                         draw_text(48,580,"Cargando subtitulos...",{238,243,250,255});SDL_RenderPresent(renderer);
                         if(!options.subtitle_loader||!options.subtitle_loader(static_cast<size_t>(row.value),data,subtitle_error)){
                             notice=subtitle_error.empty()?"No se pudo descargar el subtitulo.":subtitle_error;break;}
@@ -291,22 +292,24 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
         const Uint32 now=SDL_GetTicks();paused=flag("pause");
         if(fresh||now-last_draw>=100){last_draw=now;SDL_SetRenderDrawColor(renderer,0,0,0,255);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);
             if(options.font&&(menu||paused||now<visible_until)){
-                SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_SetRenderDrawColor(renderer,10,17,28,230);
+                SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_SetRenderDrawColor(renderer,12,8,22,238);
                 SDL_Rect panel{20,menu?35:526,1240,menu?650:175};SDL_RenderFillRect(renderer,&panel);
-                const SDL_Color white{238,243,250,255},cyan{73,219,223,255},muted{180,192,209,255};
+                SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect edge{20,menu?35:526,1240,3};SDL_RenderFillRect(renderer,&edge);
+                const SDL_Color white{247,245,255,255},cyan{190,145,255,255},muted{177,168,197,255};
                 if(menu){draw_text(48,48,options.title.empty()?"Reproductor":options.title,white);
                     draw_text(48,84,page==0?"A: elegir | izq/der: ajustar | B: volver":"A: seleccionar | B: ajustes",muted);
                     auto rows=menu_rows();const int start=selection/10*10;
                     for(int i=start;i<static_cast<int>(rows.size())&&i<start+10;++i){const int y=130+(i-start)*41;
-                        if(i==selection){SDL_SetRenderDrawColor(renderer,28,63,78,255);SDL_Rect highlight{35,y-2,1207,39};SDL_RenderFillRect(renderer,&highlight);}
+                        if(i==selection){SDL_SetRenderDrawColor(renderer,57,34,82,255);SDL_Rect highlight{35,y-2,1207,39};SDL_RenderFillRect(renderer,&highlight);
+                            SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect marker{35,y-2,4,39};SDL_RenderFillRect(renderer,&marker);}
                         draw_text(50,y,(i==selection?"> ":"  ")+rows[i].label,i==selection?cyan:white,1150);}
                     draw_text(48,650,"Opciones "+std::to_string(start+1)+"-"+std::to_string(std::min(start+10,static_cast<int>(rows.size())))+" / "+std::to_string(rows.size())+"  |  Arriba/abajo: navegar",muted);
                     draw_text(48,560,notice.empty()?"L/R: anterior/siguiente | Y: cambiar audio":notice,cyan,1150);
                 }else{draw_text(44,539,(paused?"PAUSA  ":"")+options.title,white);draw_text(44,578,"A: pausa | X/+: opciones | Y: audio | izq/der: 10 s | ZL/ZR: 60 s | B: salir",muted);}
                 const double pos=property("time-pos"),duration=property("duration");
                 draw_text(48,menu?606:618,clock(pos)+(duration>0?" / "+clock(duration):" / EN VIVO"),white);
-                SDL_SetRenderDrawColor(renderer,65,79,94,255);SDL_Rect bar{330,menu?619:631,870,8};SDL_RenderFillRect(renderer,&bar);
-                if(duration>0){bar.w=static_cast<int>(870*std::clamp(pos/duration,0.0,1.0));SDL_SetRenderDrawColor(renderer,73,219,223,255);SDL_RenderFillRect(renderer,&bar);}
+                SDL_SetRenderDrawColor(renderer,63,49,83,255);SDL_Rect bar{330,menu?619:631,870,8};SDL_RenderFillRect(renderer,&bar);
+                if(duration>0){bar.w=static_cast<int>(870*std::clamp(pos/duration,0.0,1.0));SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_RenderFillRect(renderer,&bar);}
                 if(!menu&&!notice.empty())draw_text(44,660,notice,cyan);
                 SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_NONE);
             }SDL_RenderPresent(renderer);
