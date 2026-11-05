@@ -53,7 +53,7 @@ jobs:
           pkg-config --cflags mpv
           pkg-config --libs mpv
 
-          if pkg-config --cflags mpv | grep -q '/ucrt64'; then
+          if pkg-config --cflags mpv | grep -qE '(^|[[:space:]])-I/ucrt64'; then
             echo "ERROR: todavía existen rutas MSYS2 sin convertir."
             exit 1
           fi
