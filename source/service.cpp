@@ -16,6 +16,7 @@
 #include <chrono>
 #include <map>
 #include <set>
+#include <atomic>
 #include <mbedtls/md5.h>
 #ifdef __SWITCH__
 #include <switch.h>
@@ -25,6 +26,12 @@
 
 namespace xs {
 using Json=nlohmann::json;
+static std::atomic<bool> cancel_http{false};
+static int service_progress(void*,curl_off_t,curl_off_t,curl_off_t,curl_off_t) {
+    return cancel_http.load(std::memory_order_relaxed)?1:0;
+}
+void service_cancel_pending(){cancel_http.store(true,std::memory_order_relaxed);}
+void service_reset_cancel(){cancel_http.store(false,std::memory_order_relaxed);}
 static std::string text(const Json& object,const char* key,const std::string& fallback="") {
     if(!object.is_object())return fallback;
     auto it=object.find(key);if(it==object.end())return fallback;
@@ -49,6 +56,9 @@ static bool request(const std::string& url,const std::string* post,const Json& c
     curl_easy_setopt(curl,CURLOPT_URL,url.c_str());
     curl_easy_setopt(curl,CURLOPT_ACCEPT_ENCODING,"");
     curl_easy_setopt(curl,CURLOPT_CONNECTTIMEOUT,10L);curl_easy_setopt(curl,CURLOPT_TIMEOUT,25L);
+    curl_easy_setopt(curl,CURLOPT_NOPROGRESS,0L);
+    curl_easy_setopt(curl,CURLOPT_XFERINFOFUNCTION,service_progress);
+    curl_easy_setopt(curl,CURLOPT_XFERINFODATA,nullptr);
     curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,1L);curl_easy_setopt(curl,CURLOPT_SSL_VERIFYHOST,2L);
     // Never forward sign-in requests or credentials to a redirected host.
     curl_easy_setopt(curl,CURLOPT_FOLLOWLOCATION,post||!follow_get?0L:1L);

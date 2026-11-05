@@ -84,9 +84,8 @@ int main(int argc,char** argv){
     }
 #ifdef _WIN32
     xs::WebUi webui;
-    const bool webui_active=webui.start(error);
-    if(webui_active)SDL_HideWindow(view.window);
-    else if(!error.empty())status="WebView2 no disponible: "+error;
+    const bool webui_active=webui.start(error,view.window);
+    if(!webui_active&&!error.empty())status="WebView2 no disponible: "+error;
 #endif
     xs::PlaybackHistory playback_history;
     xs::SavedCatalog saved(
@@ -112,14 +111,18 @@ int main(int argc,char** argv){
         xs::Entry donate;donate.title="Apoyar el desarrollo";donate.kind=xs::EntryKind::Donation;c.entries.push_back(donate);return c;
     };
     auto load=[&](auto task,const std::string& message,bool splash=false){
-        cancel_task=false;task_done=0;task_total=0;std::atomic<bool> complete{false};
+        cancel_task=false;xs::service_reset_cancel();task_done=0;task_total=0;std::atomic<bool> complete{false};
 #ifdef _WIN32
         if(webui_active)webui.set_status(message);
 #endif
         const auto started=SDL_GetTicks();if(splash)view.splash(message);
         std::thread worker([&]{task();complete.store(true);});
         while(!complete.load()||(splash&&SDL_GetTicks()-started<1100)){
-            SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT){running=false;cancel_task=true;}if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b))cancel_task=true;
+            SDL_Event e;while(SDL_PollEvent(&e)){
+            if(e.type==SDL_QUIT){running=false;cancel_task=true;}
+            if(e.type==SDL_WINDOWEVENT&&e.window.event==SDL_WINDOWEVENT_CLOSE){running=false;cancel_task=true;}
+            if(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_q&&(SDL_GetModState()&KMOD_CTRL)){running=false;cancel_task=true;}
+            else if(e.type==SDL_KEYDOWN&&(e.key.keysym.sym==SDLK_ESCAPE||e.key.keysym.sym==SDLK_b))cancel_task=true;
 #ifndef __SWITCH__
             if(xs::gamepad_translate(e)==xs::Pad::B)cancel_task=true;
 #endif
@@ -127,6 +130,7 @@ int main(int argc,char** argv){
 #ifdef __SWITCH__
             if(!appletMainLoop()){running=false;cancel_task=true;}padUpdate(&pad);if(padGetButtonsDown(&pad)&HidNpadButton_B)cancel_task=true;
 #endif
+            if(cancel_task.load())xs::service_cancel_pending();
             const auto progress=task_total.load()?"  TV "+std::to_string(task_done.load())+"/"+std::to_string(task_total.load()):"";
             if(splash)view.splash(message);else view.draw(catalog,selected,message+progress+(cancel_task.load()?" - terminando consulta...":""),full_memory);
             SDL_Delay(16);
@@ -146,7 +150,7 @@ int main(int argc,char** argv){
             if(webui_active&&!donating) {
                 static const char* page_names[]={"Inicio","TV en vivo","Películas","Series","Favoritos","Apoyar"};
                 const int page_index=std::max(0,std::min(5,view.active_nav));
-                webui.sync(catalog,selected,status,page_names[page_index]);
+                webui.sync(catalog,root_catalog,selected,status,page_names[page_index]);
             } else
 #endif
             {if(donating)view.donation();else view.draw(catalog,selected,status,full_memory);}
@@ -177,12 +181,30 @@ int main(int argc,char** argv){
                         break;
                     case xs::WebUi::Back: back=true;break;
                     case xs::WebUi::ToggleFavorite: toggle_favorite=true;break;
+                    case xs::WebUi::Quit: running=false;break;
+                    case xs::WebUi::ToggleFullscreen:{
+                        const bool fullscreen=(SDL_GetWindowFlags(view.window)&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(view.window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0){
+                            if(fullscreen){SDL_SetWindowSize(view.window,1280,720);SDL_SetWindowPosition(view.window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);}
+                            webui.resize();redraw=true;
+                        }
+                        break;
+                    }
                     default:break;
                 }
                 continue;
             }
 #endif
-            if(event.type==SDL_WINDOWEVENT)redraw=true;
+            if(event.type==SDL_WINDOWEVENT){
+                if(event.window.event==SDL_WINDOWEVENT_CLOSE){running=false;continue;}
+                redraw=true;
+#ifdef _WIN32
+                if(webui_active&&(event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED||
+                                  event.window.event==SDL_WINDOWEVENT_RESIZED||
+                                  event.window.event==SDL_WINDOWEVENT_MAXIMIZED||
+                                  event.window.event==SDL_WINDOWEVENT_RESTORED))webui.resize();
+#endif
+            }
             if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
 // El puntero no cambia el foco al pasar por encima; solo un clic selecciona.
             if(event.type==SDL_MOUSEBUTTONDOWN||event.type==SDL_FINGERDOWN){
@@ -193,6 +215,18 @@ int main(int argc,char** argv){
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
                     case SDLK_ESCAPE:back=true;if(history.empty()&&!donating)running=false;break;
+#ifdef _WIN32
+                    case SDLK_q:if((SDL_GetModState()&KMOD_CTRL)!=0)running=false;break;
+                    case SDLK_F11:{
+                        const Uint32 flags=SDL_GetWindowFlags(view.window);
+                        const bool fullscreen=(flags&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(view.window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0){
+                            if(fullscreen){SDL_SetWindowSize(view.window,1280,720);SDL_SetWindowPosition(view.window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);}
+                            redraw=true;
+                        }
+                        break;
+                    }
+#endif
                     case SDLK_UP:up=true;break;
                     case SDLK_DOWN:down=true;break;
                     case SDLK_LEFT:left=true;break;
@@ -236,7 +270,7 @@ int main(int argc,char** argv){
             if(back||play||login){
                 donating=false;redraw=true;
 #ifdef _WIN32
-                if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+                if(webui_active)webui.set_visible(true);
 #endif
             }
             SDL_Delay(10);continue;
@@ -266,11 +300,13 @@ int main(int argc,char** argv){
             if(session){catalog=home();if(!root_catalog.entries.empty())status="Elige que quieres ver. X: buscar en todo el catalogo.";else status+=" Pulsa Y para reintentar el catalogo.";}else {catalog.title="Sin conexion";status+=" Pulsa Y para reintentar.";}
             selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
         }
-        if(nav_action>0){
+        if(nav_action==0){
+            catalog=home();selected=0;history.clear();view.active_nav=0;view.nav_focus=-1;redraw=true;
+        }else if(nav_action>0){
             if(nav_action==5){
                 donating=true;
 #ifdef _WIN32
-                if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+                if(webui_active)webui.set_visible(false);
 #endif
                 view.donation();redraw=true;continue;
             }
@@ -330,7 +366,7 @@ int main(int argc,char** argv){
                 if(entry.kind==xs::EntryKind::Donation){
                     donating=true;
 #ifdef _WIN32
-                    if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+                    if(webui_active)webui.set_visible(false);
 #endif
                     view.donation();redraw=true;continue;
                 }
@@ -375,11 +411,11 @@ int main(int argc,char** argv){
                         if(!source.empty()){
                             xs::PlaybackOutcome outcome;
 #ifdef _WIN32
-                            if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);}
+                            if(webui_active)webui.set_visible(false);
 #endif
                             status=xs::play(source,view.renderer,headers,options,&outcome);
 #ifdef _WIN32
-                            if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+                            if(webui_active)webui.set_visible(true);
 #endif
                             xs::trace("main:video_returned");
                             speed=outcome.speed;volume=outcome.volume;auto_next=outcome.auto_next;

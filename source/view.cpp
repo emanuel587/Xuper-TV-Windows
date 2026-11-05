@@ -62,7 +62,14 @@ bool View::open(std::string& error){
 #endif
     if(SDL_Init(sdl_flags)!=0){error=SDL_GetError();return false;}
     if(TTF_Init()!=0){error=TTF_GetError();return false;}
-    window=SDL_CreateWindow("Xuper TV",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,1280,720,SDL_WINDOW_RESIZABLE);
+    #ifdef _WIN32
+    // Borderless desktop-fullscreen: covers the taskbar as well as the work area.
+    // F11 can switch to a borderless window without restoring native title buttons.
+    const Uint32 window_flags=SDL_WINDOW_BORDERLESS|SDL_WINDOW_RESIZABLE|SDL_WINDOW_ALLOW_HIGHDPI|SDL_WINDOW_FULLSCREEN_DESKTOP;
+#else
+    const Uint32 window_flags=SDL_WINDOW_RESIZABLE;
+#endif
+    window=SDL_CreateWindow("Xuper TV",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,1280,720,window_flags);
     if(!window){error=SDL_GetError();return false;}
     renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
     if(!renderer)renderer=SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);

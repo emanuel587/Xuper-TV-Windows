@@ -151,6 +151,16 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
         if(!surface)return;
         SDL_Texture* label=SDL_CreateTextureFromSurface(renderer,surface);SDL_Rect dst{x,y,surface->w,surface->h};
         if(label){SDL_RenderCopy(renderer,label,nullptr,&dst);SDL_DestroyTexture(label);}SDL_FreeSurface(surface);};
+    auto rounded_fill=[&](SDL_Rect rect,SDL_Color color,int radius=12){
+        if(rect.w<=0||rect.h<=0)return;
+        radius=std::max(0,std::min(radius,std::min(rect.w,rect.h)/2));
+        SDL_SetRenderDrawColor(renderer,color.r,color.g,color.b,color.a);
+        for(int y=0;y<rect.h;++y){int inset=0;
+            if(y<radius){const double dy=radius-y-0.5;inset=radius-static_cast<int>(std::sqrt(std::max(0.0,double(radius*radius)-dy*dy)));}
+            else if(y>=rect.h-radius){const double dy=y-(rect.h-radius)+0.5;inset=radius-static_cast<int>(std::sqrt(std::max(0.0,double(radius*radius)-dy*dy)));}
+            SDL_RenderDrawLine(renderer,rect.x+inset,rect.y+y,rect.x+rect.w-inset-1,rect.y+y);
+        }
+    };
     auto clock=[](double value){int n=std::max(0,static_cast<int>(value));char b[32];std::snprintf(b,sizeof(b),"%02d:%02d:%02d",n/3600,n/60%60,n%60);return std::string(b);};
     struct Row {std::string label;int action;int64_t value=0;};
     auto menu_rows=[&]{std::vector<Row> rows;
@@ -175,8 +185,23 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
         int horizontal=0,vertical=0,jump=0,item_delta=0;SDL_Event event;
         while(SDL_PollEvent(&event)){
             if(event.type==SDL_QUIT)running=false;
+            if(event.type==SDL_WINDOWEVENT&&event.window.event==SDL_WINDOWEVENT_CLOSE)running=false;
             if(event.type==SDL_KEYDOWN&&!event.key.repeat)switch(event.key.keysym.sym){
                 case SDLK_ESCAPE:back=true;break;case SDLK_SPACE:activate=true;break;case SDLK_RETURN:activate=true;break;
+#ifdef _WIN32
+                case SDLK_q:if((SDL_GetModState()&KMOD_CTRL)!=0)running=false;break;
+                case SDLK_F11:{
+                    SDL_Window* window=SDL_RenderGetWindow(renderer);
+                    if(window){
+                        const bool fullscreen=(SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0&&fullscreen){
+                            SDL_SetWindowSize(window,1280,720);
+                            SDL_SetWindowPosition(window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);
+                        }
+                    }
+                    break;
+                }
+#endif
                 case SDLK_x:case SDLK_TAB:settings=true;break;case SDLK_y:audio=true;break;case SDLK_s:subs=true;break;
                 case SDLK_LEFT:horizontal-=1;break;case SDLK_RIGHT:horizontal+=1;break;case SDLK_UP:vertical-=1;break;case SDLK_DOWN:vertical+=1;break;
                 case SDLK_PAGEUP:item_delta=-1;break;case SDLK_PAGEDOWN:item_delta=1;break;
@@ -242,7 +267,7 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
                         if(external_index==row.value&&external_id>=0){mpv_set_property_string(mpv,"sid",std::to_string(external_id).c_str());int on=1;mpv_set_property(mpv,"sub-visibility",MPV_FORMAT_FLAG,&on);notice="Subtitulo seleccionado";page=0;selection=2;break;}
                         SDL_SetRenderDrawColor(renderer,8,6,16,255);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);
                         SDL_SetRenderDrawColor(renderer,18,12,29,245);SDL_Rect loading{20,550,1240,140};SDL_RenderFillRect(renderer,&loading);
-                        SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect loading_edge{20,550,1240,3};SDL_RenderFillRect(renderer,&loading_edge);
+                        SDL_SetRenderDrawColor(renderer,54,203,230,255);SDL_Rect loading_edge{20,550,1240,3};SDL_RenderFillRect(renderer,&loading_edge);
                         draw_text(48,580,"Cargando subtitulos...",{238,243,250,255});SDL_RenderPresent(renderer);
                         if(!options.subtitle_loader||!options.subtitle_loader(static_cast<size_t>(row.value),data,subtitle_error)){
                             notice=subtitle_error.empty()?"No se pudo descargar el subtitulo.":subtitle_error;break;}
@@ -292,25 +317,51 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
         const Uint32 now=SDL_GetTicks();paused=flag("pause");
         if(fresh||now-last_draw>=100){last_draw=now;SDL_SetRenderDrawColor(renderer,0,0,0,255);SDL_RenderClear(renderer);SDL_RenderCopy(renderer,texture,nullptr,nullptr);
             if(options.font&&(menu||paused||now<visible_until)){
-                SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);SDL_SetRenderDrawColor(renderer,12,8,22,238);
-                SDL_Rect panel{20,menu?35:526,1240,menu?650:175};SDL_RenderFillRect(renderer,&panel);
-                SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect edge{20,menu?35:526,1240,3};SDL_RenderFillRect(renderer,&edge);
-                const SDL_Color white{247,245,255,255},cyan{190,145,255,255},muted{177,168,197,255};
-                if(menu){draw_text(48,48,options.title.empty()?"Reproductor":options.title,white);
-                    draw_text(48,84,page==0?"A: elegir | izq/der: ajustar | B: volver":"A: seleccionar | B: ajustes",muted);
-                    auto rows=menu_rows();const int start=selection/10*10;
-                    for(int i=start;i<static_cast<int>(rows.size())&&i<start+10;++i){const int y=130+(i-start)*41;
-                        if(i==selection){SDL_SetRenderDrawColor(renderer,57,34,82,255);SDL_Rect highlight{35,y-2,1207,39};SDL_RenderFillRect(renderer,&highlight);
-                            SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_Rect marker{35,y-2,4,39};SDL_RenderFillRect(renderer,&marker);}
-                        draw_text(50,y,(i==selection?"> ":"  ")+rows[i].label,i==selection?cyan:white,1150);}
-                    draw_text(48,650,"Opciones "+std::to_string(start+1)+"-"+std::to_string(std::min(start+10,static_cast<int>(rows.size())))+" / "+std::to_string(rows.size())+"  |  Arriba/abajo: navegar",muted);
-                    draw_text(48,560,notice.empty()?"L/R: anterior/siguiente | Y: cambiar audio":notice,cyan,1150);
-                }else{draw_text(44,539,(paused?"PAUSA  ":"")+options.title,white);draw_text(44,578,"A: pausa | X/+: opciones | Y: audio | izq/der: 10 s | ZL/ZR: 60 s | B: salir",muted);}
-                const double pos=property("time-pos"),duration=property("duration");
-                draw_text(48,menu?606:618,clock(pos)+(duration>0?" / "+clock(duration):" / EN VIVO"),white);
-                SDL_SetRenderDrawColor(renderer,63,49,83,255);SDL_Rect bar{330,menu?619:631,870,8};SDL_RenderFillRect(renderer,&bar);
-                if(duration>0){bar.w=static_cast<int>(870*std::clamp(pos/duration,0.0,1.0));SDL_SetRenderDrawColor(renderer,164,91,255,255);SDL_RenderFillRect(renderer,&bar);}
-                if(!menu&&!notice.empty())draw_text(44,660,notice,cyan);
+                SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
+                const SDL_Color white{244,249,255,255},cyan{83,220,244,255},muted{164,184,205,255};
+                const int panel_y=menu?28:520,panel_h=menu?664:176;
+                rounded_fill({18,panel_y+7,1244,panel_h},{0,0,0,112},20);
+                rounded_fill({18,panel_y,1244,panel_h},{105,137,166,76},20);
+                rounded_fill({20,panel_y+2,1240,panel_h-4},{7,15,27,238},18);
+                rounded_fill({42,panel_y+2,1196,3},{47,184,221,210},2);
+                if(menu){
+                    draw_text(52,48,options.title.empty()?"Reproductor":options.title,white,1100);
+                    draw_text(52,84,page==0?"A: elegir | izq/der: ajustar | B: volver":"A: seleccionar | B: ajustes",muted,1100);
+                    auto rows=menu_rows();const int first=selection/10*10;
+                    for(int i=first;i<static_cast<int>(rows.size())&&i<first+10;++i){
+                        const int y=130+(i-first)*41;
+                        if(i==selection){
+                            rounded_fill({38,y-4,1204,36},{24,91,121,205},9);
+                            rounded_fill({38,y-4,4,36},cyan,2);
+                        }
+                        draw_text(58,y,(i==selection?"›  ":"   ")+rows[i].label,i==selection?cyan:white,1150);
+                    }
+                    rounded_fill({48,603,1184,1},{105,137,166,90},1);
+                    draw_text(52,615,notice.empty()?"L/R: anterior/siguiente | Y: cambiar audio":notice,cyan,1150);
+                    draw_text(52,650,"Opciones "+std::to_string(first+1)+"-"+std::to_string(std::min(first+10,static_cast<int>(rows.size())))+" / "+std::to_string(rows.size())+"  |  Arriba/abajo: navegar",muted,1150);
+                }else{
+                    rounded_fill({48,542,176,27},paused?SDL_Color{116,79,35,225}:SDL_Color{20,104,91,220},13);
+                    draw_text(61,546,paused?"Ⅱ  PAUSADO":"●  REPRODUCIENDO",white,158);
+                    draw_text(242,545,options.title.empty()?"Xuper TV":options.title,white,750);
+                    rounded_fill({1040,542,174,29},{23,48,69,230},13);
+                    draw_text(1054,547,"VOL "+std::to_string(static_cast<int>(property("volume")))+"%",cyan,145);
+                    draw_text(52,585,"ESPACIO: pausa   X: opciones   Y: audio   S: subtítulos   ←/→: 10 s   ZL/ZR: 60 s",muted,1145);
+                    const double pos=property("time-pos"),duration=property("duration");
+                    draw_text(52,635,clock(pos),white,190);
+                    draw_text(1060,635,duration>0?clock(duration):"EN DIRECTO",duration>0?white:cyan,150);
+                    rounded_fill({250,646,780,9},{74,94,113,145},5);
+                    if(duration>0){
+                        const double ratio=std::clamp(pos/duration,0.0,1.0);
+                        const int filled=static_cast<int>(780*ratio);
+                        if(filled>0){
+                            rounded_fill({250,646,filled,9},{49,190,224,255},5);
+                            if(filled>8)rounded_fill({250,646,filled/2,3},{129,235,248,220},2);
+                        }
+                    }else{
+                        rounded_fill({250,646,780,2},{49,190,224,170},1);
+                    }
+                    if(!notice.empty())draw_text(52,672,notice,cyan,1145);
+                }
                 SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_NONE);
             }SDL_RenderPresent(renderer);
         }else SDL_Delay(5);

@@ -42,6 +42,18 @@ jobs:
             mingw-w64-ucrt-x86_64-webview
             mingw-w64-ucrt-x86_64-webview2-loader
 
+      - name: Validar interfaz WebView2
+        shell: pwsh
+        run: |
+          node --version
+          node --check web-ui/app.js
+          if (!(Test-Path -Path 'web-ui/index.html' -PathType Leaf) -or (Get-Item 'web-ui/index.html').Length -eq 0) {
+            throw 'web-ui/index.html no existe o está vacío.'
+          }
+          if (!(Test-Path -Path 'web-ui/styles.css' -PathType Leaf) -or (Get-Item 'web-ui/styles.css').Length -eq 0) {
+            throw 'web-ui/styles.css no existe o está vacío.'
+          }
+
       - name: Corregir rutas y configurar
         run: |
           echo "=== Convertir rutas de MSYS2 ==="
