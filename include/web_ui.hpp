@@ -22,7 +22,7 @@ public:
     WebUi(const WebUi&) = delete;
     WebUi& operator=(const WebUi&) = delete;
 
-    bool start(std::string& error);
+    bool start(std::string& error, SDL_Window* parent = nullptr);
     void stop();
     bool active() const { return active_.load(); }
     Uint32 event_type() const { return event_type_; }
@@ -42,6 +42,7 @@ private:
     mutable std::mutex mutex_;
     std::condition_variable startup_cv_;
     void* handle_=nullptr;
+    void* parent_window_=nullptr;
     bool startup_done_=false;
     bool startup_ok_=false;
     bool stop_requested_=false;
