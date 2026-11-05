@@ -206,7 +206,8 @@ void WebUi::binding_callback(const char* id,const char* request,void* arg) {
     auto* context=static_cast<BindingContext*>(arg);
     if(!context||!context->owner)return;
     std::string value;
-    if(request&&context->code!=Ready&&context->code!=Play&&context->code!=Back)
+    if(request&&context->code!=Ready&&context->code!=Play&&context->code!=Back&&
+       context->code!=Quit&&context->code!=ToggleFullscreen)
         value=webview::detail::json_parse(request,"",0);
     context->owner->push_event(context->code,value);
     webview_t handle=nullptr;
