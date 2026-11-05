@@ -190,39 +190,45 @@ void WebUi::push_event(int code,const std::string& value) {
     if(SDL_PushEvent(&event)<=0)delete payload;
 }
 
-void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& status,const std::string& page) {
-    std::ostringstream json;
-    json<<'[';
-    const size_t count=std::min<size_t>(catalog.entries.size(),300);
-    for(size_t i=0;i<count;++i) {
-        if(i)json<<',';
-        const auto& entry=catalog.entries[i];
-        const char* kind_name="media";
-        switch(entry.kind) {
-            case EntryKind::Media: kind_name="media"; break;
-            case EntryKind::Category: kind_name="category"; break;
-            case EntryKind::Channel: kind_name="channel"; break;
-            case EntryKind::Section: kind_name="section"; break;
-            case EntryKind::VodCategory: kind_name="vod-category"; break;
-            case EntryKind::Asset: kind_name="asset"; break;
-            case EntryKind::Episode: kind_name="episode"; break;
-            case EntryKind::SearchPage: kind_name="search-page"; break;
-            case EntryKind::VodPage: kind_name="vod-page"; break;
-            case EntryKind::LiveSection: kind_name="live-section"; break;
-            case EntryKind::SearchAction: kind_name="search-action"; break;
-            case EntryKind::Donation: kind_name="donation"; break;
-            case EntryKind::Favorites: kind_name="favorites"; break;
-            case EntryKind::Resume: kind_name="resume"; break;
+void WebUi::sync(const Catalog& catalog,const Catalog& root_catalog,size_t selected,const std::string& status,const std::string& page) {
+    auto serialize=[](const Catalog& source) {
+        std::ostringstream json;
+        json<<'[';
+        const size_t count=std::min<size_t>(source.entries.size(),300);
+        for(size_t i=0;i<count;++i) {
+            if(i)json<<',';
+            const auto& entry=source.entries[i];
+            const char* kind_name="media";
+            switch(entry.kind) {
+                case EntryKind::Media: kind_name="media"; break;
+                case EntryKind::Category: kind_name="category"; break;
+                case EntryKind::Channel: kind_name="channel"; break;
+                case EntryKind::Section: kind_name="section"; break;
+                case EntryKind::VodCategory: kind_name="vod-category"; break;
+                case EntryKind::Asset: kind_name="asset"; break;
+                case EntryKind::Episode: kind_name="episode"; break;
+                case EntryKind::SearchPage: kind_name="search-page"; break;
+                case EntryKind::VodPage: kind_name="vod-page"; break;
+                case EntryKind::LiveSection: kind_name="live-section"; break;
+                case EntryKind::SearchAction: kind_name="search-action"; break;
+                case EntryKind::Donation: kind_name="donation"; break;
+                case EntryKind::Favorites: kind_name="favorites"; break;
+                case EntryKind::Resume: kind_name="resume"; break;
+            }
+            json<<"{\"title\":"<<json_quote(entry.title)
+                <<",\"artwork\":"<<json_quote(entry.artwork)
+                <<",\"description\":"<<json_quote(entry.description)
+                <<",\"kind\":"<<json_quote(kind_name)
+                <<",\"program_type\":"<<json_quote(entry.program_type)
+                <<'}';
         }
-        json<<"{\"title\":"<<json_quote(entry.title)
-            <<",\"artwork\":"<<json_quote(entry.artwork)
-            <<",\"description\":"<<json_quote(entry.description)
-            <<",\"kind\":"<<json_quote(kind_name)
-            <<'}';
-    }
-    json<<']';
+        json<<']';
+        return json.str();
+    };
+    const std::string current_json=serialize(catalog);
+    const std::string root_json=serialize(root_catalog);
     std::ostringstream js;
-    js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
+    js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<current_json<<','<<selected<<",{},"<<root_json<<");"
       <<"window.xuperUI.setPage("<<json_quote(page)<<",false);"
       <<"window.xuperUI.setStatus("<<json_quote(status)<<");}";
     const auto script=js.str();
@@ -233,7 +239,6 @@ void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& statu
     task->work=[script](webview_t w){webview_eval(w,script.c_str());};
     if(webview_dispatch(handle,&dispatch_task,task)<0)delete task;
 }
-
 void WebUi::set_status(const std::string& status) {
     const std::string script="if(window.xuperUI)window.xuperUI.setStatus("+json_quote(status)+");";
     webview_t handle=nullptr;
