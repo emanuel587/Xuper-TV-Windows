@@ -35,8 +35,8 @@
     {kind:"asset",title:"La última misión",description:"Acción · 2025 · Imagen de muestra",demo:true},
     {kind:"asset",title:"Reino de sombras",description:"Fantasía · 2026 · Imagen de muestra",demo:true},
     {kind:"asset",title:"Código infinito",description:"Ciencia ficción · 2025 · Imagen de muestra",demo:true},
-    {kind:"episode",title:"Más allá del tiempo",description:"Serie · Temporada 1 · Episodio 1 · Muestra",demo:true},
-    {kind:"episode",title:"Distrito central",description:"Serie · Temporada 2 · Episodio 3 · Muestra",demo:true},
+    {kind:"series",title:"Más allá del tiempo",description:"Serie · Temporada 1 · Episodio 1 · Muestra",demo:true},
+    {kind:"series",title:"Distrito central",description:"Serie · Temporada 2 · Episodio 3 · Muestra",demo:true},
     {kind:"episode",title:"Pequeños exploradores",description:"Kids · Episodio de muestra",demo:true}
   ];
 \n  const svg = (path) => { const el = document.createElementNS("http://www.w3.org/2000/svg","svg"); el.setAttribute("viewBox","0 0 24 24"); el.innerHTML = path; return el; };
@@ -91,10 +91,10 @@
     $("#details-title").textContent=item.title||"Sin título";
     $("#details-description").textContent=item.description||"Contenido disponible en tu catálogo de Xuper TV.";
     $("#details-type").textContent=typeLabel(item);
-    $("#details-poster").style.backgroundImage=item.artwork||item.demo?'url("'+item.artwork.replace(/["\\]/g,"")+'")':"";
+    $("#details-poster").style.backgroundImage='url("'+(item.artwork||artUri(item)).replace(/["\\]/g,"") + '")';
     detailsDialog.showModal();
   }
-  function typeLabel(item){if(item.kind==="channel")return "CANAL EN VIVO";if(item.kind==="asset")return "CATÁLOGO";if(item.kind==="episode")return "EPISODIO";return "EXPLORAR";}
+  function typeLabel(item){if(item.kind==="channel")return "CANAL EN VIVO";if(item.kind==="asset")return "CATÁLOGO";if(item.kind==="episode")return "EPISODIO";if(item.kind==="series")return "SERIE";return "EXPLORAR";}
 
   function makeFallback(kind,title){
     const wrap=document.createElement("div");
@@ -117,18 +117,18 @@
     meta.textContent=typeLabel(item);tag.textContent=item.kind==="channel"?"EN DIRECTO":"SELECCIÓN PARA TI";
     $("#watch-label").textContent=item.kind==="category"?"Explorar sección":"Ver ahora";
     $("#hero-index").textContent=String(index+1).padStart(2,"0")+"  /  "+String(items.length).padStart(2,"0");
-    if(item.artwork){
-      const safe=item.artwork.replace(/["\\]/g,"");
+    if(item.artwork||item.demo){
+      const safe=(item.artwork||artUri(item)).replace(/["\\]/g,"");
       backdrop.style.backgroundImage='linear-gradient(90deg,rgba(7,12,19,.22),rgba(7,12,19,.05)),url("'+safe+'")';
-      art.onload=()=>artWrap.classList.add("visible");art.onerror=()=>artWrap.classList.remove("visible");art.src=item.artwork;
+      art.onload=()=>artWrap.classList.add("visible");art.onerror=()=>artWrap.classList.remove("visible");art.src=item.artwork||artUri(item);
     }else{backdrop.style.backgroundImage="";art.removeAttribute("src");artWrap.classList.remove("visible");}
   }
   function createCard(item,index){
     const card=document.createElement("button");card.type="button";card.className="catalog-card"+(index===selectedIndex?" selected":"");
     card.dataset.kind=item.kind||"category";card.dataset.index=String(index);card.setAttribute("aria-label",(item.title||"Abrir contenido"));
     const art=document.createElement("div");art.className="catalog-art";
-    if(item.artwork){
-      const img=document.createElement("img");img.alt="";img.src=item.artwork;img.loading=index===selectedIndex?"eager":"lazy";img.decoding="async";img.fetchPriority=index===selectedIndex?"high":"auto";
+    if(item.artwork||item.demo){
+      const img=document.createElement("img");img.alt="";img.src=item.artwork||artUri(item);img.loading=index===selectedIndex?"eager":"lazy";img.decoding="async";img.fetchPriority=index===selectedIndex?"high":"auto";
       img.onerror=()=>{img.remove();art.append(makeFallback(item.kind,item.title));};art.append(img);
     }else art.append(makeFallback(item.kind,item.title));
     const title=document.createElement("span");title.className="catalog-title";title.textContent=item.title||"Sin título";card.append(art,title);
@@ -163,7 +163,7 @@
   }
   function renderCatalog(catalogItems=[],selected=0){
     const restoreCardFocus=document.activeElement?.classList?.contains("catalog-card");
-    items=Array.isArray(catalogItems)?catalogItems:[];if(!items.length)items=DEMO_ITEMS;selectedIndex=Math.max(0,Math.min(Number(selected)||0,Math.max(0,items.length-1)));
+    items=Array.isArray(catalogItems)?catalogItems:[];if(!items.length){items=DEMO_ITEMS;selected=8;}selectedIndex=Math.max(0,Math.min(Number(selected)||0,Math.max(0,items.length-1)));
     railRoot.replaceChildren();
     if(!items.length){
       setHero(null,0);quickSection.hidden=true;
@@ -179,7 +179,7 @@
     renderQuick(quick);
     const channels=indexed.filter(x=>x.item.kind==="channel");
     const assets=indexed.filter(x=>x.item.kind==="asset");
-    const episodes=indexed.filter(x=>x.item.kind==="episode");
+    const episodes=indexed.filter(x=>x.item.kind==="episode");const series=indexed.filter(x=>x.item.kind==="series");
     const categories=indexed.filter(x=>x.item.kind==="category");
     if(quick.length && activePage==="Inicio"){
       const section=makeShelf("Tu catálogo","Elige una sección para comenzar",indexed.filter(x=>x.item.kind==="category"&&/favorito|continuar/i.test(x.item.title||"")));
@@ -187,6 +187,7 @@
     }
     if(channels.length){const s=makeShelf("Canales disponibles","La programación que puedes ver ahora",channels);if(s)railRoot.append(s);}
     if(assets.length){const label=activePage==="Series"?"Series para descubrir":activePage==="Películas"?"Películas para disfrutar":"Recomendados para ti";const s=makeShelf(label,"Explora los títulos de tu catálogo",assets);if(s)railRoot.append(s);}
+    if(series.length){const s=makeShelf("Series para descubrir","Historias para continuar",series);if(s)railRoot.append(s);}
     if(episodes.length){const s=makeShelf("Episodios","Selecciona un episodio para reproducir",episodes);if(s)railRoot.append(s);}
     if(categories.length && !quick.length){const s=makeShelf(activePage==="TV en vivo"?"Categorías de TV":activePage==="Películas"?"Categorías de películas":activePage==="Series"?"Categorías de series":"Explora por categorías","Selecciona una categoría para ver su contenido",categories);if(s)railRoot.append(s);}
     if(!railRoot.children.length && !quick.length){
