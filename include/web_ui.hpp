@@ -27,7 +27,7 @@ public:
     bool active() const { return active_.load(); }
     Uint32 event_type() const { return event_type_; }
 
-    void sync(const Catalog& catalog, size_t selected,
+    void sync(const Catalog& catalog, const Catalog& root_catalog, size_t selected,
               const std::string& status, const std::string& page);
     void set_status(const std::string& status);
     void set_visible(bool visible);
