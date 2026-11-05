@@ -6,6 +6,8 @@
 #include <utility>
 #include <functional>
 namespace xs {
+void service_cancel_pending();
+void service_reset_cancel();
 struct ServiceSession;
 struct LoginAttempt {
     bool authenticated=false;
