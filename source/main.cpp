@@ -181,6 +181,15 @@ int main(int argc,char** argv){
                         break;
                     case xs::WebUi::Back: back=true;break;
                     case xs::WebUi::ToggleFavorite: toggle_favorite=true;break;
+                    case xs::WebUi::Quit: running=false;break;
+                    case xs::WebUi::ToggleFullscreen:{
+                        const bool fullscreen=(SDL_GetWindowFlags(view.window)&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(view.window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0){
+                            if(fullscreen){SDL_SetWindowSize(view.window,1280,720);SDL_SetWindowPosition(view.window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);}
+                            webui.resize();redraw=true;
+                        }
+                        break;
+                    }
                     default:break;
                 }
                 continue;
