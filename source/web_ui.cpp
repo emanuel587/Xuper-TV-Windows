@@ -327,13 +327,15 @@ void WebUi::resize() {
 }
 
 void WebUi::stop() {
-    webview_t handle=nullptr;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         stop_requested_=true;
-        handle=static_cast<webview_t>(handle_);
+        // Keep the handle protected until termination is requested. Otherwise
+        // thread_main could destroy it between copying the pointer and calling
+        // webview_terminate(), which makes shutdown timing-dependent.
+        auto handle=static_cast<webview_t>(handle_);
+        if(handle)webview_terminate(handle);
     }
-    if(handle)webview_terminate(handle);
     if(thread_.joinable())thread_.join();
     active_=false;
 }
