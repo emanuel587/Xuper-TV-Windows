@@ -146,7 +146,7 @@ int main(int argc,char** argv){
             if(webui_active&&!donating) {
                 static const char* page_names[]={"Inicio","TV en vivo","Películas","Series","Favoritos","Apoyar"};
                 const int page_index=std::max(0,std::min(5,view.active_nav));
-                webui.sync(catalog,selected,status,page_names[page_index]);
+                webui.sync(catalog,root_catalog,selected,status,page_names[page_index]);
             } else
 #endif
             {if(donating)view.donation();else view.draw(catalog,selected,status,full_memory);}
