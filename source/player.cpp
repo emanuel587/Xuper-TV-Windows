@@ -190,6 +190,17 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
                 case SDLK_ESCAPE:back=true;break;case SDLK_SPACE:activate=true;break;case SDLK_RETURN:activate=true;break;
 #ifdef _WIN32
                 case SDLK_q:if((SDL_GetModState()&KMOD_CTRL)!=0)running=false;break;
+                case SDLK_F11:{
+                    SDL_Window* window=SDL_RenderGetWindow(renderer);
+                    if(window){
+                        const bool fullscreen=(SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN_DESKTOP)!=0;
+                        if(SDL_SetWindowFullscreen(window,fullscreen?0:SDL_WINDOW_FULLSCREEN_DESKTOP)==0&&fullscreen){
+                            SDL_SetWindowSize(window,1280,720);
+                            SDL_SetWindowPosition(window,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED);
+                        }
+                    }
+                    break;
+                }
 #endif
                 case SDLK_x:case SDLK_TAB:settings=true;break;case SDLK_y:audio=true;break;case SDLK_s:subs=true;break;
                 case SDLK_LEFT:horizontal-=1;break;case SDLK_RIGHT:horizontal+=1;break;case SDLK_UP:vertical-=1;break;case SDLK_DOWN:vertical+=1;break;
