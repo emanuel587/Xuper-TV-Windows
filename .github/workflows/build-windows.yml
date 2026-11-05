@@ -68,7 +68,10 @@ jobs:
         run: ctest --test-dir build-win --output-on-failure
 
       - name: Empaquetar
-        run: bash packaging/windows/package.sh build-win dist/Xuper-TV-Windows
+        run: |
+          bash packaging/windows/package.sh build-win dist/Xuper-TV-Windows
+          test -f dist/Xuper-TV-Windows/service.template.json
+          test ! -e dist/Xuper-TV-Windows/service.json
 
       - uses: actions/upload-artifact@v4
         with:

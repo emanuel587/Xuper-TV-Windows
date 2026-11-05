@@ -7,10 +7,15 @@ sistema de build (`CMakeLists.txt`). La compilacion para Switch no cambia.
 ## Que incluye y que no
 
 - Es el **cliente**. Este repositorio no contiene servidores, catalogos ni
-  cuentas, ni en Switch ni en Windows. La app lee el mismo `service.json` que
-  usas en la consola; copialo junto a `XuperTV.exe` y todo se comporta igual
-  (mismo flujo de arranque, catalogo, favoritos, continuar viendo y reproductor).
-- No se incluye ni se genera configuracion de ningun servicio de terceros.
+  cuentas, ni en Switch ni en Windows. El paquete incluye
+  `service.template.json` como plantilla de arranque, sin identidad de
+  instalacion. Cuando no existe `service.json`, la app genera ese archivo con
+  una identidad unica y despues conserva el estado del dispositivo en
+  `device_state.json`.
+- Si ya tienes una instalacion activada en Switch y quieres conservar la misma
+  identidad, copia tanto `service.json` como `device_state.json` desde
+  `sdmc:/switch/xuperswitch/` a la carpeta de `XuperTV.exe`.
+- No se incluye el catalogo ni una cuenta de usuario.
 
 ## Compilar (MSYS2, recomendado)
 
@@ -36,9 +41,12 @@ la carpeta como artefacto. En Linux tambien compila con el mismo `CMakeLists.txt
 
 ## Archivos junto al .exe
 
-El programa trabaja siempre en la carpeta del `.exe`: `service.json`,
-`device_state.json`, `library_state.json`, `playback_state.json`, `catalog.m3u`,
-`artwork/` y `diagnostico.log`. Son los mismos nombres que en `sdmc:/switch/xuperswitch/`.
+El programa trabaja siempre en la carpeta del `.exe`: `service.template.json`
+(plantilla para una instalacion nueva), `service.json` (configuracion con
+identidad propia, generada al iniciar), `device_state.json`,
+`library_state.json`, `playback_state.json`, `catalog.m3u`, `artwork/` y
+`diagnostico.log`. Son los mismos nombres que en
+`sdmc:/switch/xuperswitch/`.
 
 - `font.ttf` es opcional: si falta usa Segoe UI/Arial de Windows.
 - `cacert.pem` es opcional: si falta, cURL usa el almacen de certificados de Windows.
