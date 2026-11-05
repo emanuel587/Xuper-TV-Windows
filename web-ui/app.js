@@ -241,17 +241,65 @@
   $("scroll-left").addEventListener("click", () => rail.scrollBy({ left: -520, behavior: "smooth" }));
   $("scroll-right").addEventListener("click", () => rail.scrollBy({ left: 520, behavior: "smooth" }));
 
+  function focusCard(index) {
+    const cards = Array.from(rail.querySelectorAll(".media-card"));
+    if (!cards.length) return;
+    const target = Math.max(0, Math.min(index, cards.length - 1));
+    cards[target].focus();
+    cards[target].scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }
+
   document.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
       $("search-input").focus();
+      return;
     }
     if (event.key === "Escape") {
-      if (detailsDialog.open) {
-        detailsDialog.close();
-      } else {
-        send("back");
+      if (detailsDialog.open) detailsDialog.close();
+      else send("back");
+      return;
+    }
+
+    const cards = Array.from(rail.querySelectorAll(".media-card"));
+    const cardIndex = cards.indexOf(document.activeElement);
+    const navIndex = navItems.indexOf(document.activeElement);
+    const arrows = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+    if (!arrows.includes(event.key)) return;
+
+    if (cardIndex >= 0) {
+      let delta = 0;
+      if (event.key === "ArrowLeft") delta = -1;
+      if (event.key === "ArrowRight") delta = 1;
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        if (!rail.classList.contains("grid-mode")) return;
+        const columns = Math.max(1, getComputedStyle(rail).gridTemplateColumns.split(" ").length);
+        delta = event.key === "ArrowUp" ? -columns : columns;
       }
+      if (delta) {
+        event.preventDefault();
+        focusCard(cardIndex + delta);
+      }
+      return;
+    }
+
+    if (navIndex >= 0 && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      const next = Math.max(0, Math.min(navIndex + (event.key === "ArrowLeft" ? -1 : 1), navItems.length - 1));
+      navItems[next].focus();
+      return;
+    }
+
+    if ((navIndex >= 0 && event.key === "ArrowDown") ||
+        (!navIndex && event.key === "ArrowDown" && document.activeElement === document.body)) {
+      if (cards.length) {
+        event.preventDefault();
+        focusCard(0);
+      }
+    }
+    if (navIndex >= 0 && event.key === "ArrowUp") {
+      event.preventDefault();
+      $("search-input").focus();
     }
   });
 
