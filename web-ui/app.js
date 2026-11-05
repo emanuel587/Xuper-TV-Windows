@@ -235,7 +235,6 @@
   });
   $("details-favorite").addEventListener("click", () => {
     detailsDialog.close();
-    send("select-item", { index: detailIndex });
     send("favorite");
   });
 
