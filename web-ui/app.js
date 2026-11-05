@@ -291,7 +291,7 @@
     }
 
     if ((navIndex >= 0 && event.key === "ArrowDown") ||
-        (!navIndex && event.key === "ArrowDown" && document.activeElement === document.body)) {
+        (navIndex < 0 && event.key === "ArrowDown" && document.activeElement === document.body)) {
       if (cards.length) {
         event.preventDefault();
         focusCard(0);
