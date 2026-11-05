@@ -34,7 +34,8 @@ ldd "$exe" |
 cp service.example.json LICENSE LICENSE.nlohmann-json COPYRIGHT.mpv DEPENDENCIAS.md WINDOWS.md "$out/"
 
 # Copiar configuración y certificado para Windows
-cp packaging/windows/service.json packaging/windows/cacert.pem "$out/"
+cp packaging/windows/service.template.json "$out/service.json"
+cp packaging/windows/cacert.pem "$out/"
 
 # Copiar licencias
 cp -r licenses "$out/"
