@@ -111,7 +111,7 @@ int main(int argc,char** argv){
         xs::Entry donate;donate.title="Apoyar el desarrollo";donate.kind=xs::EntryKind::Donation;c.entries.push_back(donate);return c;
     };
     auto load=[&](auto task,const std::string& message,bool splash=false){
-        cancel_task=false;task_done=0;task_total=0;std::atomic<bool> complete{false};
+        cancel_task=false;xs::service_reset_cancel();task_done=0;task_total=0;std::atomic<bool> complete{false};
 #ifdef _WIN32
         if(webui_active)webui.set_status(message);
 #endif
@@ -130,6 +130,7 @@ int main(int argc,char** argv){
 #ifdef __SWITCH__
             if(!appletMainLoop()){running=false;cancel_task=true;}padUpdate(&pad);if(padGetButtonsDown(&pad)&HidNpadButton_B)cancel_task=true;
 #endif
+            if(cancel_task.load())xs::service_cancel_pending();
             const auto progress=task_total.load()?"  TV "+std::to_string(task_done.load())+"/"+std::to_string(task_total.load()):"";
             if(splash)view.splash(message);else view.draw(catalog,selected,message+progress+(cancel_task.load()?" - terminando consulta...":""),full_memory);
             SDL_Delay(16);
