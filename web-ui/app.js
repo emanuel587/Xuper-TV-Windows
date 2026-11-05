@@ -119,7 +119,7 @@
     meta.textContent=typeLabel(item);tag.textContent=item.kind==="channel"?"EN DIRECTO":"SELECCIÓN PARA TI";
     $("#watch-label").textContent=item.kind==="category"?"Explorar sección":"Ver ahora";
     $("#hero-index").textContent=String(index+1).padStart(2,"0")+"  /  "+String(items.length).padStart(2,"0");
-    if(item.artwork||item.demo){
+    if(true){
       const safe=(item.artwork||artUri(item)).replace(/["\\]/g,"");
       backdrop.style.backgroundImage='linear-gradient(90deg,rgba(7,12,19,.22),rgba(7,12,19,.05)),url("'+safe+'")';
       art.onload=()=>artWrap.classList.add("visible");art.onerror=()=>artWrap.classList.remove("visible");art.src=item.artwork||artUri(item);
