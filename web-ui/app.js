@@ -65,6 +65,8 @@
     "TV en vivo":["TELEVISIÓN EN DIRECTO","Tu televisión, en un solo lugar.","Explora las categorías y encuentra tu canal."],
     "Películas":["UNA HISTORIA PARA CADA MOMENTO","Noche de película.","Descubre títulos para todos tus momentos."],
     "Series":["SIGUE DONDE TE QUEDASTE","Tu próxima serie favorita.","Encuentra una historia para continuar."],
+    "Kids":["DIVERSIÓN PARA TODA LA FAMILIA","Un mundo para descubrir.","Animación y entretenimiento para los más pequeños."],
+    "Anime":["UNIVERSOS EXTRAORDINARIOS","Explora el mundo del anime.","Historias, aventuras y personajes inolvidables."],
     "Favoritos":["TU COLECCIÓN PERSONAL","Tus favoritos.","Tus canales guardados en un mismo lugar."],
     "Apoyar":["GRACIAS POR ESTAR AQUÍ","Apoya el proyecto.","Ayúdanos a seguir mejorando Xuper TV."]
   };
@@ -222,6 +224,6 @@
       if(msg.type==="status")setStatus(msg.text);
     });
   }
-  window.xuperUI=Object.freeze({renderCatalog,setPage,setStatus});
+  renderCatalog([]);\n  window.xuperUI=Object.freeze({renderCatalog,setPage,setStatus});
   window.xuperReady?.();
 })();
