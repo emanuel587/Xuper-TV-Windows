@@ -31,6 +31,7 @@ public:
               const std::string& status, const std::string& page);
     void set_status(const std::string& status);
     void set_visible(bool visible);
+    void resize();
 
 private:
     struct BindingContext { WebUi* owner=nullptr; int code=0; };
