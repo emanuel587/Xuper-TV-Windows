@@ -45,7 +45,7 @@ jobs:
           echo "=== Convertir rutas de MSYS2 ==="
           WIN_PREFIX="$(cygpath -m /ucrt64)"
 
-          find /ucrt64/lib/pkgconfig /ucrt64/share/pkgconfig \
+          find /ucrt64/lib/pkgconfig \
             -type f -name '*.pc' \
             -exec sed -i "s|/ucrt64|${WIN_PREFIX}|g" {} +
 
