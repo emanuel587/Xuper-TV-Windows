@@ -158,6 +158,13 @@ void WebUi::thread_main() {
     const char* names[]={"xuperReady","xuperNavigate","xuperPlay","xuperSearch","xuperSelectItem","xuperBack","xuperFavorite"};
     bool ok=webview_set_title(webview,"Xuper TV")>=0 &&
             webview_set_size(webview,1360,850,WEBVIEW_HINT_NONE)>=0;
+    if(ok&&parent_window_) {
+        HWND child=static_cast<HWND>(webview_get_window(webview));
+        HWND parent=static_cast<HWND>(parent_window_);
+        RECT bounds{};GetClientRect(parent,&bounds);
+        if(child)SetWindowPos(child,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
+                              SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED|SWP_SHOWWINDOW);
+    }
     for(size_t i=0;i<7&&ok;++i)
         ok=webview_bind(webview,names[i],&WebUi::binding_callback,&bindings_[i])>=0;
 
