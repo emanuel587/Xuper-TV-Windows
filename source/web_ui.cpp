@@ -6,7 +6,10 @@
 #include <objbase.h>
 #include <fstream>
 #include <future>
-#include <memory>
+#include <functional>
+#include <chrono>
+#include <algorithm>
+#include <new>
 #include <sstream>
 #include <utility>
 
@@ -29,10 +32,10 @@ bool replace_once(std::string& text,const std::string& from,const std::string& t
 }
 
 std::string json_quote(const std::string& value) {
-    std::string out="\\"";
+    std::string out="\"";
     for(unsigned char c:value) {
         switch(c) {
-            case '\\': out+="\\\\\"; break;
+            case '\\': out+="\\\\"; break;
             case '"': out+="\\\""; break;
             case '\b': out+="\\b"; break;
             case '\f': out+="\\f"; break;
@@ -55,8 +58,8 @@ std::string load_frontend() {
     const std::string css=read_text_file("web-ui/styles.css");
     const std::string js=read_text_file("web-ui/app.js");
     if(html.empty()||css.empty()||js.empty())return {};
-    std::string style="<style>\n"+css+"\n</style>";
-    std::string script="<script>\n"+js+"\n</script>";
+    const std::string style="<style>\n"+css+"\n</style>";
+    const std::string script="<script>\n"+js+"\n</script>";
     if(!replace_once(html,"<link rel=\"stylesheet\" href=\"styles.css\">",style))return {};
     if(!replace_once(html,"<script src=\"app.js\"></script>",script))return {};
     return html;
@@ -92,13 +95,15 @@ bool WebUi::start(std::string& error) {
     std::unique_lock<std::mutex> lock(mutex_);
     if(!startup_cv_.wait_for(lock,std::chrono::seconds(20),[this]{return startup_done_;})) {
         error="WebView2 tardó demasiado en inicializar.";
-        lock.unlock();stop();return false;
+        stop_requested_=true;
+        lock.unlock();
+        if(thread_.joinable())thread_.join();
+        return false;
     }
     if(!startup_ok_) {
         error=startup_error_.empty()?"No se pudo iniciar WebView2.":startup_error_;
         lock.unlock();if(thread_.joinable())thread_.join();return false;
     }
-    active_=true;
     return true;
 }
 
@@ -136,19 +141,24 @@ void WebUi::thread_main() {
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if(ok)handle_=webview;
-        else startup_error_="No se pudo cargar web-ui/index.html, styles.css o app.js.";
+        if(ok) {
+            handle_=webview;
+            active_=true;
+        } else startup_error_="No se pudo cargar web-ui/index.html, styles.css o app.js.";
         startup_ok_=ok;startup_done_=true;
     }
     startup_cv_.notify_all();
 
-    if(ok)webview_run(webview);
+    bool should_run=ok;
+    { std::lock_guard<std::mutex> lock(mutex_); should_run=should_run&&!stop_requested_; }
+    if(should_run)webview_run(webview);
+    bool should_quit=false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         handle_=nullptr;
+        should_quit=!stop_requested_;
     }
     webview_destroy(webview);
-    const bool should_quit=!stop_requested_;
     active_=false;
     CoUninitialize();
 
@@ -197,15 +207,13 @@ void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& statu
     js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
       <<"window.xuperUI.setPage("<<json_quote(page)<<",false);"
       <<"window.xuperUI.setStatus("<<json_quote(status)<<");}";
-    auto script=js.str();
+    const auto script=js.str();
     webview_t handle=nullptr;
     {std::lock_guard<std::mutex> lock(mutex_);handle=static_cast<webview_t>(handle_);}
     if(!handle)return;
     auto* task=new DispatchTask;
-    task->work=[script=std::move(script)](webview_t w){webview_eval(w,script.c_str());};
-    auto future=task->completed.get_future();
-    if(webview_dispatch(handle,&dispatch_task,task)<0){delete task;return;}
-    (void)future;
+    task->work=[script](webview_t w){webview_eval(w,script.c_str());};
+    if(webview_dispatch(handle,&dispatch_task,task)<0)delete task;
 }
 
 void WebUi::set_status(const std::string& status) {
@@ -215,7 +223,7 @@ void WebUi::set_status(const std::string& status) {
     if(!handle)return;
     auto* task=new DispatchTask;
     task->work=[script](webview_t w){webview_eval(w,script.c_str());};
-    webview_dispatch(handle,&dispatch_task,task);
+    if(webview_dispatch(handle,&dispatch_task,task)<0)delete task;
 }
 
 void WebUi::set_visible(bool visible) {
