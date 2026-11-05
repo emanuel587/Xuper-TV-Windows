@@ -39,6 +39,8 @@ jobs:
             mingw-w64-ucrt-x86_64-libpng
             mingw-w64-ucrt-x86_64-libjpeg-turbo
             mingw-w64-ucrt-x86_64-libwebp
+            mingw-w64-ucrt-x86_64-webview
+            mingw-w64-ucrt-x86_64-webview2-loader
 
       - name: Corregir rutas y configurar
         run: |
