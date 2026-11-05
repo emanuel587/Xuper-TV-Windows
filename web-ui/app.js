@@ -6,7 +6,7 @@
   const rail = $("card-rail");
   const detailsDialog = $("details-dialog");
   const toast = $("toast");
-  let activePage = "Inicio", items = [], selectedIndex = 0, detailIndex = 0, toastTimer = 0;
+  let activePage = "Inicio", items = [], rootItems = [], selectedIndex = 0, detailIndex = 0, toastTimer = 0;
 
   const pageIds = {"Inicio":"view-home","TV en vivo":"view-live","Películas":"view-movies","Series":"view-series","Favoritos":"view-favorites","Apoyar":"view-support"};
   const pageCopy = {
@@ -138,8 +138,9 @@
     setEmpty(emptyId,list.length===0);
     if(countId)$(countId).textContent=list.length+" elementos";
   }
-  function renderCatalog(catalogItems=[],selected=0,meta={}) {
+  function renderCatalog(catalogItems=[],selected=0,meta={},rootCatalogItems=[]) {
     items=Array.isArray(catalogItems)?catalogItems:[];
+    rootItems=Array.isArray(rootCatalogItems)?rootCatalogItems:[];
     const raw=Number(selected); selectedIndex=Number.isFinite(raw)?Math.max(0,Math.min(Math.trunc(raw),Math.max(0,items.length-1))):0;
     rail.replaceChildren();
     items.forEach((item,index)=>rail.append(makeCard(item||{},index)));
@@ -148,9 +149,21 @@
     $("empty-description").textContent=activePage==="Favoritos"?"Los elementos que marques como favoritos aparecerán aquí.":"El servicio no ha enviado contenido para esta sección.";
     if(meta?.title && activePage==="Inicio")$("shelf-title").textContent=meta.title;
     showHero(); renderLive();
-    renderGrid("movies-grid","movies-empty",item=>item.kind!=="channel" && !isSection(item),"movies-count");
-    renderGrid("series-grid","series-empty",item=>item.kind==="episode" || item.kind==="media" || item.kind==="asset","series-count");
-    renderGrid("favorites-grid","favorites-empty",item=>item.kind==="channel" || item.kind==="media" || item.kind==="asset");
+    const discovery=$("home-sections-rail"); discovery.replaceChildren();
+    rootItems.forEach((item)=>{
+      const card=document.createElement("button");card.type="button";card.className="discovery-card";
+      card.append(makeArtwork(item,"discovery-art"));
+      const copy=document.createElement("span");copy.className="discovery-copy";
+      const label=document.createElement("small");label.textContent=item.program_type==="0"?"SERIES":"CINE";
+      const title=document.createElement("strong");title.textContent=item.title||"Explorar catálogo";
+      const action=document.createElement("span");action.textContent="Explorar colección  →";
+      copy.append(label,title,action);card.append(copy);
+      card.addEventListener("click",()=>setPage(item.program_type==="0"?"Series":"Películas"));discovery.append(card);
+    });
+    $("home-discovery").hidden=rootItems.length===0;
+    renderGrid("movies-grid","movies-empty",item=>item.kind==="asset" && item.program_type!=="0" || item.kind==="episode" && item.program_type!=="0" || item.kind==="category" || item.kind==="vod-category" || item.kind==="vod-page" || item.kind==="media","movies-count");
+    renderGrid("series-grid","series-empty",item=>item.kind==="episode" || item.kind==="asset" && item.program_type==="0" || item.kind==="category" || item.kind==="vod-category" || item.kind==="vod-page","series-count");
+    renderGrid("favorites-grid","favorites-empty",item=>item.kind==="channel" || item.kind==="media" || item.kind==="asset" || item.kind==="episode");
   }
   function openDetails(index) {
     const item=items[index]; if(!item)return; detailIndex=index;
