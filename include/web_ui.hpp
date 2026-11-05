@@ -15,7 +15,7 @@ namespace xs {
 
 class WebUi {
 public:
-    enum EventCode { Ready=1, Navigate, Play, Search, SelectItem, Back };
+    enum EventCode { Ready=1, Navigate, Play, Search, SelectItem, Back, ToggleFavorite };
 
     WebUi() = default;
     ~WebUi();
@@ -48,7 +48,7 @@ private:
     std::string startup_error_;
     Uint32 event_type_=static_cast<Uint32>(-1);
     std::atomic<bool> active_{false};
-    BindingContext bindings_[6]{};
+    BindingContext bindings_[7]{};
 };
 
 } // namespace xs
