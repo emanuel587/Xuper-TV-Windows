@@ -176,6 +176,7 @@ int main(int argc,char** argv){
                         catch(...) {}
                         break;
                     case xs::WebUi::Back: back=true;break;
+                    case xs::WebUi::ToggleFavorite: toggle_favorite=true;break;
                     default:break;
                 }
                 continue;
@@ -326,7 +327,13 @@ int main(int argc,char** argv){
             if(previous){selected=selected>=page?selected-page:0;redraw=true;}
             if(play){
                 const xs::Entry entry=catalog.entries[selected];
-                if(entry.kind==xs::EntryKind::Donation){donating=true;redraw=true;continue;}
+                if(entry.kind==xs::EntryKind::Donation){
+                    donating=true;
+#ifdef _WIN32
+                    if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+#endif
+                    view.donation();redraw=true;continue;
+                }
                 if(entry.kind==xs::EntryKind::LiveSection||entry.kind==xs::EntryKind::Favorites||entry.kind==xs::EntryKind::Resume){
                     history.emplace_back(catalog,selected);catalog={};catalog.title=entry.title;
                     if(entry.kind==xs::EntryKind::LiveSection){for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);view.active_nav=1;}
