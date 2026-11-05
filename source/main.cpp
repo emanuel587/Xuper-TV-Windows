@@ -143,7 +143,7 @@ int main(int argc,char** argv){
         if(redraw){
             view.favorite=!catalog.entries.empty()&&saved.contains(catalog.entries[std::min(selected,catalog.entries.size()-1)]);
 #ifdef _WIN32
-            if(webui_active) {
+            if(webui_active&&!donating) {
                 static const char* page_names[]={"Inicio","TV en vivo","Películas","Series","Favoritos","Apoyar"};
                 const int page_index=std::max(0,std::min(5,view.active_nav));
                 webui.sync(catalog,selected,status,page_names[page_index]);
@@ -192,7 +192,7 @@ int main(int argc,char** argv){
             }
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
-                    case SDLK_ESCAPE:back=true;if(history.empty())running=false;break;
+                    case SDLK_ESCAPE:back=true;if(history.empty()&&!donating)running=false;break;
                     case SDLK_UP:up=true;break;
                     case SDLK_DOWN:down=true;break;
                     case SDLK_LEFT:left=true;break;
