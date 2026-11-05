@@ -1,4 +1,3 @@
-
 name: Compilar para Windows
 on:
   workflow_dispatch:
@@ -7,16 +6,20 @@ on:
     paths-ignore:
       - '**.md'
   pull_request:
+
 permissions:
   contents: read
+
 jobs:
   windows:
     runs-on: windows-latest
     defaults:
       run:
         shell: msys2 {0}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
@@ -34,14 +37,22 @@ jobs:
             mingw-w64-ucrt-x86_64-libpng
             mingw-w64-ucrt-x86_64-libjpeg-turbo
             mingw-w64-ucrt-x86_64-libwebp
+
       - name: Configurar
-        run: cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DXUPER_FETCH_MBEDTLS=ON
+        run: |
+          export PKG_CONFIG_SYSTEM_INCLUDE_PATH=/ucrt64/include
+          export PKG_CONFIG_SYSTEM_LIBRARY_PATH=/ucrt64/lib
+          cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DXUPER_FETCH_MBEDTLS=ON
+
       - name: Compilar
         run: cmake --build build-win
+
       - name: Pruebas
         run: ctest --test-dir build-win --output-on-failure
+
       - name: Empaquetar
         run: bash packaging/windows/package.sh build-win dist/Xuper-TV-Windows
+
       - uses: actions/upload-artifact@v4
         with:
           name: Xuper-TV-0.14.1-Windows
