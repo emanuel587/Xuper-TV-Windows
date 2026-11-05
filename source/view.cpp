@@ -262,17 +262,7 @@ int View::hit(const Catalog& c,size_t selected,int x,int y)const{
     if(x>=main_x&&x<=main_x+main_w&&y>=166&&y<=476&&selected<c.entries.size())return static_cast<int>(selected);
     return -1;
 }
-int View::hit(const Catalog& c,size_t selected,int x,int y)const{
-    if(!c.entries.empty()&&selected<c.entries.size()&&c.entries[selected].kind==EntryKind::Channel&&x>=1076&&x<=1226&&y>=103&&y<=132)return -8;
-    if(x>=12&&x<=178&&y>=145&&y<145+6*53){const int row=(y-145)/53;if((y-145)%53<42)return -2-row;}
-    const int cols=columns(c),page=page_size(c),gap=14,left=212,content_w=1040,w=(content_w-gap*(cols-1))/cols;
-    const int top=410,h=202;
-    if(x<left||y<top||y>=top+h)return -1;
-    const int col=(x-left)/(w+gap);
-    if(col>=cols||(x-left)%(w+gap)>=w)return -1;
-    const size_t i=(selected/static_cast<size_t>(page))*static_cast<size_t>(page)+static_cast<size_t>(col);
-    return i<c.entries.size()?static_cast<int>(i):-1;
-}
+
 void View::donation(){
     background();brand(76,52);
     text(76,170,"Apoya el desarrollo",white,720,large);
