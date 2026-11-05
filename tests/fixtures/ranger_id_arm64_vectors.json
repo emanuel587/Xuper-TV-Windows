@@ -1,0 +1,23 @@
+[
+  {
+    "user": 1234,
+    "device": 0,
+    "seconds": 1793548800,
+    "nonce": 0,
+    "value": "40KTePH_BB8jnBBBBBBBBBBY43E_BBBBBB"
+  },
+  {
+    "user": 987654,
+    "device": 1161981756646125696,
+    "seconds": 1793548801,
+    "nonce": 305419896,
+    "value": "78fuL-YwKtaEbnBIzKiZzwEZAVbEaRNUcr"
+  },
+  {
+    "user": 4294967295,
+    "device": 18446744073709551615,
+    "seconds": 1793548802,
+    "nonce": 4294967295,
+    "value": "7fuycoDZZZZZZZZZZZZZZZZHFC5VRZZZZZ"
+  }
+]

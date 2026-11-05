@@ -1,0 +1,16 @@
+Xuper TV para Windows
+=====================
+
+1. Descomprime esta carpeta donde quieras (no hace falta instalar nada).
+2. Copia tu propio service.json junto a XuperTV.exe. Es el mismo archivo que
+   usas en la Switch (sdmc:/switch/xuperswitch/service.json). Este paquete no
+   incluye configuracion de ningun servicio; service.example.json solo muestra
+   los campos con valores ficticios.
+3. Abre XuperTV.exe. La primera vez crea device_state.json: conservalo al
+   actualizar, igual que en Switch.
+
+Opcional: pon un font.ttf junto al .exe (si no, usa Segoe UI de Windows) y un
+cacert.pem si tu red lo necesita (si no, usa los certificados de Windows).
+
+Controles y detalles: WINDOWS.md. Licencias: carpeta licenses y los archivos
+LICENSE*, COPYRIGHT.mpv y DEPENDENCIAS.md.

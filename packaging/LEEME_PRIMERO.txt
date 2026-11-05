@@ -1,0 +1,21 @@
+Xuper TV by JonaRuacho 0.14.1 - Instalacion para Nintendo Switch
+
+1. Descomprime el ZIP. Copia la carpeta switch completa a la raiz de la SD.
+2. Abre hbmenu con memoria completa: manten R al iniciar un juego.
+3. Abre XuperSwitch. El catalogo se carga automaticamente.
+
+En una instalacion nueva, el primer arranque crea service.json con una identidad
+aleatoria propia. Debes tener conexion a Internet y permisos del servicio.
+La app conserva las respuestas de autorizacion; no incluye suscripcion ni
+garantiza que el servicio acepte todas las regiones o instalaciones.
+
+ACTUALIZAR: reemplaza los archivos incluidos en este ZIP. No borres service.json,
+device_state.json, playback_state.json, library_state.json ni sus copias .bak.
+El paquete no contiene esos archivos personales y no los sobrescribe.
+
+Favoritos: selecciona un canal y presiona el stick derecho (R3), o toca Favorito.
+X busca canales/peliculas/series. Y Inicio. B volver. A abrir. L/R pagina.
+Menos abre apoyo voluntario. En video: A pausa; X/+ opciones; B salir del video.
+
+Codigo y creditos: https://github.com/jonaruacho/Xuper-TV-by-JonaRuacho
+La interfaz 0.14 y el arranque 0.14.1 necesitan validacion en Switch.
