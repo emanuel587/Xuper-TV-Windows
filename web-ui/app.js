@@ -136,6 +136,7 @@
     quickSection.hidden=entries.length===0;
   }
   function renderCatalog(catalogItems=[],selected=0){
+    const restoreCardFocus=document.activeElement?.classList?.contains("catalog-card");
     items=Array.isArray(catalogItems)?catalogItems:[];selectedIndex=Math.max(0,Math.min(Number(selected)||0,Math.max(0,items.length-1)));
     railRoot.replaceChildren();
     if(!items.length){
@@ -165,6 +166,7 @@
     if(!railRoot.children.length && !quick.length){
       const s=makeShelf("Explora el catálogo","Selecciona un elemento para continuar",indexed);if(s)railRoot.append(s);
     }
+    if(restoreCardFocus) railRoot.querySelector('[data-index="'+selectedIndex+'"]')?.focus({preventScroll:true});
   }
 
   document.addEventListener("keydown",e=>{
@@ -172,7 +174,16 @@
     if(e.key==="Escape"){if(searchDialog.open||detailsDialog.open)return;send("back");}
     if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)&&!searchDialog.open&&!detailsDialog.open){
       const active=document.activeElement;if(active?.tagName==="INPUT")return;
-      const buttons=$$("button:not(:disabled):not([hidden])").filter(b=>b.offsetWidth&&b.offsetHeight);
+      const rail=active?.closest?.(".card-rail");
+      if(rail && (e.key==="ArrowLeft"||e.key==="ArrowRight")){
+        const cards=$(".catalog-card",rail),idx=cards.indexOf(active),next=idx+(e.key==="ArrowLeft"?-1:1);
+        if(idx>=0&&cards[next]){e.preventDefault();cards[next].focus();return;}
+      }
+      if(active?.classList?.contains("nav-item")&&(e.key==="ArrowUp"||e.key==="ArrowDown")){
+        const nav=navItems.filter(b=>b.offsetWidth&&b.offsetHeight),idx=nav.indexOf(active),next=idx+(e.key==="ArrowUp"?-1:1);
+        if(nav[next]){e.preventDefault();nav[next].focus();return;}
+      }
+      const buttons=$("button:not(:disabled):not([hidden])").filter(b=>b.offsetWidth&&b.offsetHeight);
       const idx=buttons.indexOf(active);if(idx>=0){e.preventDefault();const delta=e.key==="ArrowLeft"?-1:e.key==="ArrowRight"?1:e.key==="ArrowUp"?-4:4;buttons[Math.max(0,Math.min(buttons.length-1,idx+delta))]?.focus();}
     }
   });
