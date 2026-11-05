@@ -123,145 +123,142 @@ int View::columns(const Catalog&)const{return 5;}
 int View::page_size(const Catalog&)const{return 5;}
 bool View::animating()const{return SDL_GetTicks()-animation_started<420;}
 
+static void icon(SDL_Renderer* r,int kind,int cx,int cy,SDL_Color color,int scale=1){
+    SDL_SetRenderDrawColor(r,color.r,color.g,color.b,color.a);
+    auto line=[&](int x1,int y1,int x2,int y2){SDL_RenderDrawLine(r,cx+x1*scale,cy+y1*scale,cx+x2*scale,cy+y2*scale);};
+    auto circle=[&](int x,int y,int rad){for(int a=0;a<360;a+=8){const double t=a*3.141592653589793/180.0;SDL_RenderDrawPoint(r,cx+(x+int(std::cos(t)*rad))*scale,cy+(y+int(std::sin(t)*rad))*scale);}};
+    switch(kind){
+        case 0: line(-9,0,0,-8);line(0,-8,9,0);line(-6,-2,-6,9);line(6,-2,6,9);line(-6,9,6,9);line(-2,9,-2,2);line(2,9,2,2);break;
+        case 1: line(-9,-7,9,-7);line(-9,-7,-9,7);line(9,-7,9,7);line(-9,7,9,7);line(-5,-3,5,-3);line(-5,1,2,1);line(-5,5,5,5);break;
+        case 2: circle(0,0,8);line(-2,-4,5,0);line(5,0,-2,4);line(-2,4,-2,-4);break;
+        case 3: line(-8,-7,8,-7);line(-8,-7,-8,7);line(8,-7,8,7);line(-8,7,8,7);line(-4,-3,4,-3);line(-4,1,4,1);line(-4,5,2,5);break;
+        case 4: line(0,-9,8,-5);line(8,-5,6,4);line(6,4,0,9);line(0,9,-6,4);line(-6,4,-8,-5);line(-8,-5,0,-9);line(-5,-2,5,-2);break;
+        case 5: circle(0,-2,7);line(5,4,10,9);break;
+        case 6: line(-8,-8,8,-8);line(-8,0,8,0);line(-8,8,8,8);circle(-10,-8,1);circle(-10,0,1);circle(-10,8,1);break;
+        case 7: line(-9,-6,9,-6);line(-9,0,9,0);line(-9,6,9,6);break;
+        case 8: circle(0,0,8);line(0,-5,0,0);line(0,0,4,3);break;
+        case 9: circle(0,-4,4);line(-8,9,-6,3);line(-6,3,0,1);line(0,1,6,3);line(6,3,8,9);line(-8,9,8,9);break;
+        case 10: line(-8,-6,8,-6);line(-8,-6,-8,5);line(-8,5,8,5);line(8,5,8,-6);line(-3,8,3,8);line(0,5,0,8);break;
+        case 11: line(-9,-7,9,-7);line(-9,-7,-3,1);line(-3,1,-3,8);line(-3,8,3,8);line(3,8,3,1);line(3,1,9,-7);break;
+        case 12: circle(0,0,7);line(5,5,10,10);break;
+        case 13: circle(0,-1,7);line(-3,7,-3,10);line(3,7,3,10);line(-3,10,3,10);break;
+        case 14: line(-8,-7,8,-7);line(-8,-7,-8,3);line(8,-7,8,3);line(-8,3,8,3);line(-4,3,0,8);line(0,8,4,3);break;
+        default: circle(0,0,7);break;
+    }
+}
 void View::draw(const Catalog& c,size_t selected,const std::string& status,bool full_memory){
     poll_images();
     const Uint32 now=SDL_GetTicks();
     if(selected!=last_selected||nav_focus!=last_nav_focus||active_nav!=last_active_nav||c.title!=last_catalog_title){
         animation_started=now;last_selected=selected;last_nav_focus=nav_focus;last_active_nav=active_nav;last_catalog_title=c.title;
     }
-    const float transition=ease_out(float(now-animation_started)/340.0f);
+    const float transition=ease_out(float(now-animation_started)/260.0f);
     background();
 
-    // Slim category rail inspired by Magis TV's landscape navigation.
-    rect({0,0,190,720},{14,14,19,248});
-    rect({189,0,1,720},{49,46,57,255});
-    brand(22,25);
-    text(25,112,"EXPLORAR",{121,119,132,255},150,small,22);
-    const char* glyphs[]={"⌂","▣","▤","▧","♡","＋"};
+    // Barra superior limpia, con iconografia vectorial consistente.
+    rect({0,0,1280,68},{12,15,23,255});
+    rect({0,67,1280,1},{43,48,59,255});
+    brand(22,14);
+    const SDL_Color topmuted{177,185,198,255};
+    icon(renderer,12,952,34,topmuted,1);
+    text(970,23,"Buscar",topmuted,68,small,24);
+    icon(renderer,11,1061,34,topmuted,1);
+    icon(renderer,8,1110,34,topmuted,1);
+    icon(renderer,9,1157,34,topmuted,1);
+    icon(renderer,10,1201,34,topmuted,1);
+    text(1218,23,"16:50",white,55,small,24);
+
+    // Navegacion lateral: opciones reales del port, sin inventar secciones no soportadas.
+    rect({0,68,205,652},{13,17,25,255});
+    rect({204,68,1,652},{40,47,59,255});
+    const char* labels[]={"TV","DESTACADOS","PELICULA","SERIES","FAVORITOS","APOYAR"};
+    const int icons[]={0,1,2,3,4,14};
+    text(24,96,"MENU PRINCIPAL",{112,125,145,255},165,small,22);
     for(int i=0;i<6;++i){
-        const int y=145+i*53;const bool focus=nav_focus==i,active=active_nav==i;
-        if(focus||active){
-            const Uint8 alpha=static_cast<Uint8>(active?220:150);
-            rounded(renderer,{12,y,166,42},{focus?58:38,focus?34:31,focus?49:42,alpha},10);
-            rounded(renderer,{12,y+8,3,26},accent,2);
+        const int y=137+i*57;const bool focused=nav_focus==i,active=active_nav==i;
+        if(focused||active){
+            rounded(renderer,{10,y-5,183,46},{focused?42:30,focused?58:43,focused?78:57,255},10);
+            rounded(renderer,{10,y+5,3,26},{67,176,255,255},2);
         }
-        text(27,y+7,glyphs[i],focus||active?white:muted,24,heading,30);
-        text(61,y+10,nav[i],focus||active?white:muted,112,font,28);
+        icon(renderer,icons[i],35,y+17,focused||active?SDL_Color{245,249,255,255}:SDL_Color{144,157,174,255});
+        text(59,y+6,labels[i],focused||active?white:SDL_Color{171,181,195,255},125,small,28);
     }
-    rounded(renderer,{18,514,154,1},line,1);
-    rounded(renderer,{22,548,35,35},panel2,10);text(31,551,"X",{255,148,151,255},28,small,28);
-    text(66,546,"Xuper TV",white,105,small,21);
-    text(66,566,"Windows",muted,100,small,19);
-    text(23,674,"XUPER TV  •  0.14.1",{116,112,126,255},155,small,20);
+    rounded(renderer,{23,510,158,1},{43,48,59,255},1);
+    text(24,535,"TU BIBLIOTECA",{112,125,145,255},155,small,22);
+    icon(renderer,7,36,580,{145,158,176,255});
+    text(58,569,"Mi contenido",muted,120,small,25);
+    text(24,674,"XUPER TV  •  WINDOWS",{99,111,129,255},170,small,20);
 
+    const bool is_live=!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel;
     const bool home=c.title=="Inicio";
-    const bool episode=!c.entries.empty()&&c.entries[0].kind==EntryKind::Episode;
-    const bool live=!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel;
-    const bool movies=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="1";
-    const bool series=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="0";
+    const bool is_movie=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="1";
+    const bool is_series=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="0";
     const Entry* featured=(!c.entries.empty()&&selected<c.entries.size())?&c.entries[selected]:nullptr;
+    const int main_x=225,main_w=1028;
+    text(main_x,91,home?"Bienvenido a Xuper TV":c.title,white,690,heading,38);
+    text(main_x,128,home?"Todo lo que te gusta, en un solo lugar":is_live?"Selecciona un canal para comenzar a ver":is_movie?"Peliculas para disfrutar":is_series?"Continua con tus series":"Explora el catalogo",muted,700,small,24);
 
-    text(216,23,c.title.empty()?"Descubrir":c.title,white,610,heading,38);
-    text(218,61,home?"Tu entretenimiento empieza aqui":live?"Canales para ver ahora":movies?"Peliculas para descubrir":series?"Series para maratonear":episode?"Temporadas y episodios":"Explora el catalogo",muted,650,small,24);
-    rounded(renderer,{1000,23,244,41},{29,28,36,255},12);
-    rounded(renderer,{1000,23,244,1},line,1);
-    text(1017,31,"⌕   Buscar contenido",muted,215,small,25);
+    // Hero panoramico; artwork real del catalogo y degradado de lectura.
+    const SDL_Rect hero{main_x,166,main_w,310};
+    rounded(renderer,{hero.x,hero.y+7,hero.w,hero.h},{0,0,0,100},16);
+    rounded(renderer,hero,{25,31,42,255},16);
+    if(featured&&!featured->artwork.empty())image(featured->artwork,featured->artwork_cache,{hero.x+hero.w/2,hero.y,hero.w/2,hero.h},true);
+    else if(!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel&&!c.entries[0].artwork.empty())image(c.entries[0].artwork,c.entries[0].artwork_cache,{hero.x+hero.w/2,hero.y,hero.w/2,hero.h},true);
+    rounded(renderer,{hero.x,hero.y,hero.w,hero.h},{8,13,22,115},16);
+    rounded(renderer,{hero.x,hero.y,hero.w/2+180,hero.h},{10,15,24,210},16);
+    rounded(renderer,{hero.x+18,hero.y+22,125,25},{29,88,133,235},8);
+    text(hero.x+30,hero.y+26,is_live?"EN DIRECTO":home?"RECOMENDADO":is_movie?"PELICULAS":is_series?"SERIES":"DESTACADO",{225,241,255,255},112,small,18);
+    const std::string title=featured?featured->title:(home?"Descubre tu proximo favorito":c.title);
+    text(hero.x+24,hero.y+76,title,white,hero.w/2-50,large,100);
+    const std::string desc=featured&&!featured->description.empty()?featured->description:(home?"Canales en vivo, peliculas y series listas para ti.":"Selecciona para ver los detalles y comenzar la reproduccion.");
+    text(hero.x+27,hero.y+184,desc,{197,207,220,255},hero.w/2-70,font,65);
+    rounded(renderer,{hero.x+26,hero.y+254,148,38},{40,145,226,255},10);
+    icon(renderer,2,hero.x+47,hero.y+273,{255,255,255,255},1);
+    text(hero.x+65,hero.y+261,is_live?"Ver canal":"Ver ahora",white,98,small,26);
+    text(hero.x+hero.w-78,hero.y+276,c.entries.empty()?"":std::to_string(selected+1)+"/"+std::to_string(c.entries.size()),{220,228,238,255},65,small,22);
 
-    // Cinematic feature area. Real artwork is used whenever the service supplies it.
-    rounded(renderer,{211,97,1041,250},{23,22,29,255},18);
-    rounded(renderer,{212,98,1038,248},{32,25,34,255},17);
-    rounded(renderer,{212,98,5,248},accent,3);
-    const int glow=static_cast<int>((1.0f-transition)*12.0f);
-    rounded(renderer,{750+glow,99,500,247},{91,30,52,90},17);
-    rounded(renderer,{1045,80,280,275},{146,49,70,34},135);
-    if(featured&&!featured->artwork.empty()){
-        image(featured->artwork,featured->artwork_cache,{865,99,382,246},true);
-        rounded(renderer,{842,98,110,248},{23,22,29,95},10);
-    }else{
-        rounded(renderer,{890,107,310,222},{57,27,43,190},16);
-        rounded(renderer,{1015,94,220,249},{107,43,56,80},105);
-        rounded(renderer,{1100,132,112,180},{177,69,77,35},56);
-        rounded(renderer,{936,149,3,145},{247,83,94,125},2);
-    }
-    if(home){
-        rounded(renderer,{246,123,146,25},{67,34,49,255},8);
-        text(258,127,"XUPER TV ORIGINAL",{255,169,162,255},128,small,18);
-        text(246,168,"Tu mundo de",white,570,large,56);
-        text(246,220,"entretenimiento",{255,170,170,255},600,large,56);
-        text(249,285,"Canales en vivo, peliculas y series en una sola experiencia.",muted,620,small,26);
-        rounded(renderer,{246,315,126,3},accent,2);
-    }else{
-        const std::string title=featured?featured->title:c.title;
-        const std::string description=featured&&!featured->description.empty()?featured->description:(live?"Explora las categorias y encuentra lo que quieres ver.":"Descubre contenido y continua donde lo dejaste.");
-        rounded(renderer,{246,123,110,25},{67,34,49,255},8);
-        text(257,127,live?"EN DIRECTO":movies?"PELICULAS":series?"SERIES":episode?"EPISODIOS":"DESTACADO",{255,169,162,255},95,small,18);
-        text(246,168,title,white,590,large,62);
-        text(249,237,description,muted,560,font,65);
-        if(featured&&featured->kind==EntryKind::Channel){
-            rounded(renderer,{246,310,112,27},{119,35,52,255},8);
-            text(260,314,"● EN VIVO",{255,242,244,255},90,small,20);
+    // Lista vertical de canales a la derecha dentro de la misma escena, al estilo de la referencia.
+    text(main_x,500,is_live?"CANALES DISPONIBLES":home?"ACCESO RAPIDO":is_movie?"PELICULAS":"CONTENIDO",white,500,heading,30);
+    text(main_x+830,506,"VER TODO  →",{132,183,221,255},190,small,22);
+    const int count=std::min(6,static_cast<int>(c.entries.size()));
+    const int card_gap=9,card_y=540,card_h=27;
+    for(int n=0;n<count;++n){
+        const size_t idx=static_cast<size_t>(n);
+        const Entry& e=c.entries[idx];
+        const bool chosen=idx==selected;
+        const int y=card_y+n*(card_h+card_gap);
+        if(chosen)rounded(renderer,{main_x,y-3,main_w,card_h+6},{34,91,137,220},8);
+        else if(n%2==0)rounded(renderer,{main_x,y-3,main_w,card_h+6},{21,27,37,190},8);
+        if(!e.artwork.empty())image(e.artwork,e.artwork_cache,{main_x+9,y-1,35,25},true);
+        else{
+            rounded(renderer,{main_x+9,y-1,35,25},{40,53,69,255},6);
+            icon(renderer,e.kind==EntryKind::Channel?2:e.kind==EntryKind::Asset?3:1,main_x+26,y+11,{168,194,220,255},1);
         }
-    }
-    text(1154,322,c.entries.empty()?"":std::to_string(selected+1)+" / "+std::to_string(c.entries.size()),{231,213,218,255},75,small,20);
-
-    const char* shelf=home?"Explora tus secciones":live?"Canales disponibles":movies?"Peliculas populares":series?"Series para ti":episode?"Episodios":"Para descubrir";
-    text(216,367,shelf,white,700,heading,33);
-    if(!c.entries.empty())text(1080,374,"VER TODO  →",{190,151,159,255},165,small,22);
-
-    const int cols=columns(c),page=page_size(c),gap=14;
-    const int left=212,content_w=1040,w=(content_w-gap*(cols-1))/cols;
-    const int top=410,h=202;
-    const size_t start=(selected/static_cast<size_t>(page))*static_cast<size_t>(page);
-    for(size_t i=start;i<c.entries.size()&&i<start+static_cast<size_t>(page);++i){
-        const Entry& e=c.entries[i];const int k=static_cast<int>(i-start);
-        const int base_x=left+k*(w+gap);
-        const bool chosen=i==selected&&nav_focus<0;
-        const float card_anim=chosen?transition:1.0f;
-        const int lift=chosen?static_cast<int>(8.0f*card_anim):0;
-        const int grow=chosen?static_cast<int>(4.0f*card_anim):0;
-        const SDL_Rect box{base_x-grow,top-lift,w+grow*2,h+grow};
-        rounded(renderer,{box.x+3,box.y+7,box.w,box.h},{0,0,0,110},13);
-        if(chosen)rounded(renderer,{box.x-3,box.y-3,box.w+6,box.h+6},{247,70,91,static_cast<Uint8>(125+80*std::sin(double(now%800)/800.0*3.14159))},14);
-        rounded(renderer,box,chosen?SDL_Color{49,30,39,255}:SDL_Color{34,32,40,255},12);
-
-        const bool poster=e.kind==EntryKind::Asset;
-        const bool channel=e.kind==EntryKind::Channel;
-        const int art_h=poster?145:channel?113:115;
-        SDL_Rect art{box.x+5,box.y+5,box.w-10,art_h};
-        rounded(renderer,art,poster?SDL_Color{23,22,28,255}:channel?SDL_Color{35,29,37,255}:SDL_Color{48,30,41,255},8);
-        const bool loaded=!e.artwork_cache.empty()&&image(e.artwork,e.artwork_cache,{art.x+2,art.y+2,art.w-4,art.h-4},true);
-        if(!loaded){
-            const char* glyph=entry_glyph(e);
-            text(art.x+15,art.y+(art.h-38)/2,glyph,chosen?white:SDL_Color{255,139,145,255},art.w-30,heading,44);
-            rounded(renderer,{art.x+14,art.y+art.h-12,art.w-28,2},{247,70,91,100},1);
-        }
-        if(poster||channel){
-            rounded(renderer,{box.x+13,box.y+12,poster?91:83,21},poster?SDL_Color{34,29,38,220}:SDL_Color{113,34,51,235},6);
-            text(box.x+18,box.y+13,entry_label(e),poster?SDL_Color{255,197,198,255}:SDL_Color{255,232,234,255},poster?82:75,small,18);
-        }
-        if(channel){
-            rounded(renderer,{box.x+box.w-24,box.y+14,7,7},{255,75,91,255},4);
-        }
-        text(box.x+12,box.y+art_h+13,e.title,chosen?white:SDL_Color{226,223,230,255},box.w-24,small,44);
-        if(!home&&!poster&&!channel)text(box.x+12,box.y+h-22,entry_label(e),muted,box.w-24,small,18);
-        if(chosen){
-            rounded(renderer,{box.x+box.w-35,box.y+box.h-32,24,24},accent,8);
-            text(box.x+box.w-29,box.y+box.h-30,"›",white,18,heading,25);
-        }
+        text(main_x+56,y+1,e.title,chosen?white:SDL_Color{190,201,216,255},main_w-110,small,23);
+        if(chosen)rounded(renderer,{main_x+main_w-19,y+7,7,13},{74,184,255,255},3);
     }
     if(c.entries.empty()){
-        rounded(renderer,{214,412,1034,186},panel,14);
-        text(248,463,c.title=="Favoritos"?"Tus favoritos apareceran aqui.":"No hay contenido para mostrar.",muted,850,font,90);
+        rounded(renderer,{main_x,535,main_w,90},{21,27,37,255},12);
+        text(main_x+22,564,"No hay contenido para mostrar en esta seccion.",muted,850,font,35);
     }
-
-    rounded(renderer,{212,638,1040,1},line,1);
-    text(216,650,status,muted,780,small,25);
-    text(216,683,"Mouse para explorar   •   Enter para abrir   •   Esc para volver   •   X para buscar   •   F para favorito",SDL_Color{120,117,130,255},1010,small,22);
-    if(!c.entries.empty()&&selected<c.entries.size()&&c.entries[selected].kind==EntryKind::Channel){
-        rounded(renderer,{1076,103,150,29},panel2,8);
-        text(1088,107,favorite?"Quitar favorito":"＋ Favorito",accent,135,small,22);
-    }
+    rounded(renderer,{225,645,1028,1},{43,48,59,255},1);
+    text(228,660,status,muted,760,small,22);
+    text(228,690,"Flechas: navegar     Enter: abrir     Esc: volver     X: buscar     F: favorito",SDL_Color{112,125,145,255},900,small,20);
     SDL_RenderPresent(renderer);
+}
+int View::hit(const Catalog& c,size_t selected,int x,int y)const{
+    if(x>=10&&x<=193&&y>=132&&y<132+6*57){
+        const int row=(y-132)/57;
+        if(row>=0&&row<6)return -2-row;
+    }
+    const int main_x=225,main_w=1028;
+    if(x>=main_x&&x<=main_x+main_w&&y>=540&&y<540+6*36){
+        const int row=(y-540)/36;
+        const size_t idx=static_cast<size_t>(row);
+        if(idx<c.entries.size())return static_cast<int>(idx);
+    }
+    if(x>=main_x&&x<=main_x+main_w&&y>=166&&y<=476&&selected<c.entries.size())return static_cast<int>(selected);
+    return -1;
 }
 int View::hit(const Catalog& c,size_t selected,int x,int y)const{
     if(!c.entries.empty()&&selected<c.entries.size()&&c.entries[selected].kind==EntryKind::Channel&&x>=1076&&x<=1226&&y>=103&&y<=132)return -8;
