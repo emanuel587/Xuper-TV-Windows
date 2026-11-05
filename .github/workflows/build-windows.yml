@@ -1,4 +1,5 @@
 name: Compilar para Windows
+
 on:
   workflow_dispatch:
   push:
@@ -13,6 +14,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+
     defaults:
       run:
         shell: msys2 {0}
@@ -38,10 +40,18 @@ jobs:
             mingw-w64-ucrt-x86_64-libjpeg-turbo
             mingw-w64-ucrt-x86_64-libwebp
 
-      - name: Configurar
+      - name: Diagnosticar y configurar
         run: |
-          export PKG_CONFIG_SYSTEM_INCLUDE_PATH=/ucrt64/include
-          export PKG_CONFIG_SYSTEM_LIBRARY_PATH=/ucrt64/lib
+          echo "=== Variables de pkg-config ==="
+          env | grep -E 'PKG_CONFIG' || true
+
+          echo "=== Flags de mpv ==="
+          pkg-config --cflags mpv
+
+          echo "=== Archivo mpv.pc ==="
+          cat /ucrt64/lib/pkgconfig/mpv.pc
+
+          echo "=== Configurar CMake ==="
           cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DXUPER_FETCH_MBEDTLS=ON
 
       - name: Compilar
