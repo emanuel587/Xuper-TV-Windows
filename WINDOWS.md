@@ -19,11 +19,11 @@ sistema de build (`CMakeLists.txt`). La compilacion para Switch no cambia.
 
 ## Compilar (MSYS2, recomendado)
 
-1. Instala [MSYS2](https://www.msys2.org) y abre la terminal **MSYS2 MINGW64**.
+1. Instala [MSYS2](https://www.msys2.org) y abre la terminal **MSYS2 UCRT64**.
 2. Dependencias:
 
    ```
-   pacman -S --needed git mingw-w64-x86_64-{gcc,cmake,ninja,pkgconf,SDL2,SDL2_ttf,mpv,curl,libpng,libjpeg-turbo,libwebp}
+   pacman -S --needed git mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,pkgconf,SDL2,SDL2_ttf,mpv,curl,libpng,libjpeg-turbo,libwebp,webview,webview2-loader}
    ```
 
 3. Compilar y probar (mbedTLS 3.6 se descarga y compila solo):
@@ -36,8 +36,8 @@ sistema de build (`CMakeLists.txt`). La compilacion para Switch no cambia.
 
 4. Carpeta portable con las DLL: `bash packaging/windows/package.sh build-win dist/Xuper-TV-Windows`
 
-`.github/workflows/build-windows.yml` hace lo mismo en GitHub Actions y publica
-la carpeta como artefacto. En Linux tambien compila con el mismo `CMakeLists.txt`.
+`.github/workflows/build-windows.yml` usa MSYS2 UCRT64, instala también WebView2 y hace
+la compilación y las pruebas en GitHub Actions; publica la carpeta como artefacto. En Linux tambien compila con el mismo `CMakeLists.txt`.
 
 ## Archivos junto al .exe
 
