@@ -329,7 +329,7 @@ int main(int argc,char** argv){
                 if(entry.kind==xs::EntryKind::Donation){
                     donating=true;
 #ifdef _WIN32
-                    if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+                    if(webui_active)webui.set_visible(false);
 #endif
                     view.donation();redraw=true;continue;
                 }
@@ -374,11 +374,11 @@ int main(int argc,char** argv){
                         if(!source.empty()){
                             xs::PlaybackOutcome outcome;
 #ifdef _WIN32
-                            if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);}
+                            if(webui_active)webui.set_visible(false);
 #endif
                             status=xs::play(source,view.renderer,headers,options,&outcome);
 #ifdef _WIN32
-                            if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+                            if(webui_active)webui.set_visible(true);
 #endif
                             xs::trace("main:video_returned");
                             speed=outcome.speed;volume=outcome.volume;auto_next=outcome.auto_next;
