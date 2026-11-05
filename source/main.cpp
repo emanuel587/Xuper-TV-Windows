@@ -124,7 +124,7 @@ int main(int argc,char** argv){
 #ifdef __SWITCH__
         if(!appletMainLoop())break;
 #endif
-        if(view.poll_images())redraw=true;
+        if(view.poll_images()||view.animating())redraw=true;
         if(redraw){view.favorite=!catalog.entries.empty()&&saved.contains(catalog.entries[std::min(selected,catalog.entries.size()-1)]);if(donating)view.donation();else view.draw(catalog,selected,status,full_memory);redraw=false;}
         bool up=false,down=false,left=false,right=false,play=false,reload=false,login=autoload,search=false,back=false,next=false,previous=false,toggle_favorite=false;int nav_action=-1;autoload=false;SDL_Event event;
         while(SDL_PollEvent(&event)){

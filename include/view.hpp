@@ -15,6 +15,7 @@ public:
     void splash(const std::string& status);
     void donation();
     bool poll_images(){return images&&images->poll();}
+    bool animating()const;
     int columns(const Catalog& catalog)const;
     int page_size(const Catalog& catalog)const;
     // -8 favorite action; -2..-7 sidebar; -1 no hit; >=0 catalogue index.
@@ -23,9 +24,13 @@ public:
 private:
     TTF_Font *small=nullptr,*large=nullptr,*heading=nullptr;
     std::unique_ptr<Artwork> images;
+    Uint32 animation_started=0;
+    size_t last_selected=static_cast<size_t>(-1);
+    int last_nav_focus=99,last_active_nav=99;
+    std::string last_catalog_title;
     void text(int x,int y,const std::string& message,SDL_Color color,int width=1160,TTF_Font* type=nullptr,int max_height=0);
     void rect(SDL_Rect r,SDL_Color color);
     void background();void brand(int x,int y,bool big=false);
-    bool image(const std::string& url,const std::string& key,SDL_Rect bounds);
+    bool image(const std::string& url,const std::string& key,SDL_Rect bounds,bool cover=true);
 };
 }
