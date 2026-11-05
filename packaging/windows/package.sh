@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 # Arma una carpeta portable para Windows: XuperTV.exe + DLL + archivos de servicio.
 # Ejecutar despues de compilar:
@@ -30,11 +29,13 @@ ldd "$exe" |
         cp -u "$dll" "$out/"
     done
 
-# Copiar archivos de configuración y licencias
+# Copiar archivos de configuracion y licencias
 cp service.example.json LICENSE LICENSE.nlohmann-json COPYRIGHT.mpv DEPENDENCIAS.md WINDOWS.md "$out/"
 
-# Copiar configuración y certificado para Windows
-cp packaging/windows/service.template.json "$out/service.json"
+# Copiar la plantilla con su nombre original.
+# No debe llamarse service.json: la aplicacion genera ese archivo con una
+# identidad unica de instalacion en el primer arranque.
+cp packaging/windows/service.template.json "$out/service.template.json"
 cp packaging/windows/cacert.pem "$out/"
 
 # Copiar licencias
