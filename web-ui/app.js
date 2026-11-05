@@ -31,7 +31,9 @@
       favorite:() => window.xuperFavorite?.(),
       "search-query":() => window.xuperSearch?.(payload.query || ""),
       "select-item":() => window.xuperSelectItem?.(Number(payload.index || 0)),
-      back:() => window.xuperBack?.()
+      back:() => window.xuperBack?.(),
+      quit:() => window.xuperQuit?.(),
+      fullscreen:() => window.xuperFullscreen?.()
     };
     if (calls[type] && (window.xuperNavigate || window.xuperPlay || window.xuperSearch)) calls[type]();
     else notify("No se pudo conectar con el motor de Xuper TV.");
