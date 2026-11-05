@@ -84,8 +84,7 @@ int main(int argc,char** argv){
     }
 #ifdef _WIN32
     xs::WebUi webui;
-    const bool webui_active=webui.start(error);
-    if(webui_active)SDL_HideWindow(view.window);
+    const bool webui_active=webui.start(error,view.window);
     else if(!error.empty())status="WebView2 no disponible: "+error;
 #endif
     xs::PlaybackHistory playback_history;
@@ -236,7 +235,7 @@ int main(int argc,char** argv){
             if(back||play||login){
                 donating=false;redraw=true;
 #ifdef _WIN32
-                if(webui_active){SDL_HideWindow(view.window);webui.set_visible(true);}
+                if(webui_active)webui.set_visible(true);
 #endif
             }
             SDL_Delay(10);continue;
@@ -270,7 +269,7 @@ int main(int argc,char** argv){
             if(nav_action==5){
                 donating=true;
 #ifdef _WIN32
-                if(webui_active){webui.set_visible(false);SDL_ShowWindow(view.window);SDL_RaiseWindow(view.window);}
+                if(webui_active)webui.set_visible(false);
 #endif
                 view.donation();redraw=true;continue;
             }
