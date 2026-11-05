@@ -42,6 +42,13 @@ jobs:
             mingw-w64-ucrt-x86_64-webview
             mingw-w64-ucrt-x86_64-webview2-loader
 
+      - name: Validar interfaz WebView2
+        run: |
+          node --version
+          node --check web-ui/app.js
+          test -s web-ui/index.html
+          test -s web-ui/styles.css
+
       - name: Corregir rutas y configurar
         run: |
           echo "=== Convertir rutas de MSYS2 ==="
