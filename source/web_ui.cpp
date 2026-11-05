@@ -129,10 +129,11 @@ void WebUi::thread_main() {
     bindings_[3]={this,Search};
     bindings_[4]={this,SelectItem};
     bindings_[5]={this,Back};
-    const char* names[]={"xuperReady","xuperNavigate","xuperPlay","xuperSearch","xuperSelectItem","xuperBack"};
+    bindings_[6]={this,ToggleFavorite};
+    const char* names[]={"xuperReady","xuperNavigate","xuperPlay","xuperSearch","xuperSelectItem","xuperBack","xuperFavorite"};
     bool ok=webview_set_title(webview,"Xuper TV")>=0 &&
             webview_set_size(webview,1360,850,WEBVIEW_HINT_NONE)>=0;
-    for(size_t i=0;i<6&&ok;++i)
+    for(size_t i=0;i<7&&ok;++i)
         ok=webview_bind(webview,names[i],&WebUi::binding_callback,&bindings_[i])>=0;
 
     const std::string html=load_frontend();
