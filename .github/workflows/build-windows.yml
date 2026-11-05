@@ -40,18 +40,20 @@ jobs:
             mingw-w64-ucrt-x86_64-libjpeg-turbo
             mingw-w64-ucrt-x86_64-libwebp
 
-      - name: Diagnosticar y configurar
+      - name: Corregir rutas y configurar
         run: |
-          echo "=== Variables de pkg-config ==="
-          env | grep -E 'PKG_CONFIG' || true
+          echo "=== Corrigiendo ruta de mpv ==="
+          MPV_PREFIX="$(cygpath -m /ucrt64)"
+          sed -i "s|^prefix=/ucrt64$|prefix=${MPV_PREFIX}|" /ucrt64/lib/pkgconfig/mpv.pc
 
-          echo "=== Flags de mpv ==="
+          echo "=== Prefijo corregido ==="
+          grep "^prefix=" /ucrt64/lib/pkgconfig/mpv.pc
+
+          echo "=== Rutas de mpv ==="
           pkg-config --cflags mpv
+          pkg-config --libs mpv
 
-          echo "=== Archivo mpv.pc ==="
-          cat /ucrt64/lib/pkgconfig/mpv.pc
-
-          echo "=== Configurar CMake ==="
+          echo "=== Configurando CMake ==="
           cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DXUPER_FETCH_MBEDTLS=ON
 
       - name: Compilar
