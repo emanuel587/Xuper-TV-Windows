@@ -42,18 +42,23 @@ jobs:
 
       - name: Corregir rutas y configurar
         run: |
-          echo "=== Corrigiendo ruta de mpv ==="
-          MPV_PREFIX="$(cygpath -m /ucrt64)"
-          sed -i "s|^prefix=/ucrt64$|prefix=${MPV_PREFIX}|" /ucrt64/lib/pkgconfig/mpv.pc
+          echo "=== Convertir rutas de MSYS2 ==="
+          WIN_PREFIX="$(cygpath -m /ucrt64)"
 
-          echo "=== Prefijo corregido ==="
-          grep "^prefix=" /ucrt64/lib/pkgconfig/mpv.pc
+          find /ucrt64/lib/pkgconfig /ucrt64/share/pkgconfig \
+            -type f -name '*.pc' \
+            -exec sed -i "s|/ucrt64|${WIN_PREFIX}|g" {} +
 
-          echo "=== Rutas de mpv ==="
+          echo "=== Comprobar rutas de mpv ==="
           pkg-config --cflags mpv
           pkg-config --libs mpv
 
-          echo "=== Configurando CMake ==="
+          if pkg-config --cflags mpv | grep -q '/ucrt64'; then
+            echo "ERROR: todavía existen rutas MSYS2 sin convertir."
+            exit 1
+          fi
+
+          echo "=== Configurar CMake ==="
           cmake -S . -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DXUPER_FETCH_MBEDTLS=ON
 
       - name: Compilar
