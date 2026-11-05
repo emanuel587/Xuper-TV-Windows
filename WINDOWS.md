@@ -53,6 +53,8 @@ identidad propia, generada al iniciar), `device_state.json`,
 
 ## Controles
 
+La edición Windows inicia en pantalla completa sin bordes (también oculta la barra de tareas y los controles nativos de minimizar/maximizar/cerrar). Usa **F11** para alternar a una ventana sin bordes; **Ctrl+Q** o **Alt+F4** para salir.
+
 | Accion | Teclado | Mando (Xbox/DualSense via SDL) |
 | --- | --- | --- |
 | Moverse | Flechas | D-pad o palanca izquierda |
@@ -64,7 +66,8 @@ identidad propia, generada al iniciar), `device_state.json`,
 | Favorito | F | R3 |
 | Apoyar el desarrollo | D | Back |
 | Recargar lista local | L | LT |
-| Salir | Esc | Start |
+| Salir | Esc / Ctrl+Q / Alt+F4 | Start |
+| Pantalla completa / ventana | F11 | — |
 
 En el reproductor: Espacio/Enter o A elige o pausa; X, Tab o Start abre el menu;
 Y cambia audio; S subtitulos; `[` `]` velocidad; F pantalla; M silencio;
