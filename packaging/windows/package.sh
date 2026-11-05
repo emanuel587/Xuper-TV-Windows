@@ -41,6 +41,14 @@ cp packaging/windows/cacert.pem "$out/"
 # Copiar licencias
 cp -r licenses "$out/"
 
+# Copiar la interfaz web que carga WebView2.
+cp -r web-ui "$out/web-ui"
+
+# Distribuir el loader oficial; el runtime WebView2 debe estar instalado en Windows.
+if [ -f "${MINGW_PREFIX:-/ucrt64}/bin/WebView2Loader.dll" ]; then
+    cp "${MINGW_PREFIX:-/ucrt64}/bin/WebView2Loader.dll" "$out/"
+fi
+
 # Copiar instrucciones de Windows
 cp packaging/windows/LEEME_WINDOWS.txt "$out/LEEME_PRIMERO.txt"
 
