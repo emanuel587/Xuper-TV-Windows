@@ -224,6 +224,7 @@
       if(msg.type==="status")setStatus(msg.text);
     });
   }
-  renderCatalog([]);\n  window.xuperUI=Object.freeze({renderCatalog,setPage,setStatus});
+  renderCatalog([]);
+  window.xuperUI=Object.freeze({renderCatalog,setPage,setStatus});
   window.xuperReady?.();
 })();
