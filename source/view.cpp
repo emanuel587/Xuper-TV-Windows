@@ -122,8 +122,11 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
 
     const bool home=c.title=="Inicio";
     const bool episode=detail(c);
+    const bool live=!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel;
+    const bool movies=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="1";
+    const bool series=!c.entries.empty()&&c.entries[0].kind==EntryKind::Asset&&c.entries[0].program_type=="0";
     text(258,25,c.title.empty()?"Explorar":c.title,white,720,heading,42);
-    text(260,68,home?"DESCUBRE ALGO NUEVO":full_memory?"TU CATALOGO":"MODO ALBUM",muted,650,small,24);
+    text(260,68,home?"DESCUBRE ALGO NUEVO":live?"CANALES DISPONIBLES":movies?"PELICULAS Y ESTRENOS":series?"SERIES PARA MARATONEAR":full_memory?"TU CATALOGO":"MODO ALBUM",muted,650,small,24);
     text(1080,31,"⌕  X  BUSCAR",muted,170,small,28);
 
     int top=145;
@@ -150,7 +153,7 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
     }
     const int cols=columns(c),count=page_size(c),gap=home?12:14;
     const int content_w=970,w=(content_w-gap*(cols-1))/cols;
-    const int h=home?112:episode?154:cols==5?210:cols==4?140:190;
+    const int h=home?112:episode?154:live?132:cols==5?210:cols==4?140:190;
     const size_t start=(selected/count)*count;
     for(size_t i=start;i<c.entries.size()&&i<start+count;++i){
         const auto& e=c.entries[i];const int k=static_cast<int>(i-start);
@@ -159,16 +162,16 @@ void View::draw(const Catalog& c,size_t selected,const std::string& status,bool 
         rounded(renderer,{x-2,y-2,w+4,h+4},chosen?accent:SDL_Color{34,28,48,255},13);
         rounded(renderer,{x,y,w,h},chosen?SDL_Color{40,30,58,255}:panel,11);
         const bool poster=e.kind==EntryKind::Asset,channel=e.kind==EntryKind::Channel;
-        const int art_h=home?65:poster?h-54:channel?h-48:episode?65:112;
-        rounded(renderer,{x+5,y+5,w-10,art_h},{19,15,29,255},8);
+        const int art_h=home?65:poster?h-54:channel?76:episode?65:112;
+        rounded(renderer,{x+5,y+5,w-10,art_h},channel?SDL_Color{24,19,38,255}:SDL_Color{19,15,29,255},8);
         if(!e.artwork_cache.empty())image(e.artwork,e.artwork_cache,{x+8,y+7,w-16,art_h-4});
         else{
             const char* icon=poster?(e.program_type=="0"?"SERIES":"CINE"):channel?"TV":e.kind==EntryKind::Donation?"+":e.kind==EntryKind::Favorites?"♡":e.kind==EntryKind::Resume?"▶":e.kind==EntryKind::SearchAction?"⌕":e.kind==EntryKind::Section?(e.program_type=="0"?"SERIES":"CINE"):e.kind==EntryKind::LiveSection?"EN VIVO":e.kind==EntryKind::Episode?"▶":"+";
             text(x+15,y+std::max(10,(art_h-34)/2),icon,chosen?white:accent,w-28,heading,42);
         }
         if(poster||channel){
-            rounded(renderer,{x+10,y+9,poster?82:86,21},{17,13,27,230},7);
-            text(x+14,y+9,label(e.kind,e.program_type),{205,174,255,255},poster?76:80,small,22);
+            rounded(renderer,{x+10,y+9,poster?82:86,21},channel?SDL_Color{105,34,54,255}:SDL_Color{17,13,27,230},7);
+            text(x+14,y+9,label(e.kind,e.program_type),channel?SDL_Color{255,151,169,255}:SDL_Color{205,174,255,255},poster?76:80,small,22);
         }
         text(x+10,y+art_h+8,e.title,white,w-20,(poster||channel)?small:font,home?34:poster?42:channel?39:54);
         if(!home&&!poster&&!channel)text(x+11,y+h-22,label(e.kind,e.program_type),muted,w-22,small,20);
@@ -189,7 +192,7 @@ int View::hit(const Catalog& c,size_t selected,int x,int y)const{
     const bool home=c.title=="Inicio",episode=detail(c);
     const int cols=columns(c),count=page_size(c),gap=home?12:14;
     const int content_w=970,w=(content_w-gap*(cols-1))/cols;
-    const int top=home?365:episode?270:145,h=home?112:episode?154:cols==5?210:cols==4?140:190;
+    const int top=home?365:episode?270:145,h=home?112:episode?154:(!c.entries.empty()&&c.entries[0].kind==EntryKind::Channel)?132:cols==5?210:cols==4?140:190;
     if(x<258||y<top||y>=638)return -1;
     const int col=(x-258)/(w+gap),row=(y-top)/(h+14);
     if(col>=cols||(x-258)%(w+gap)>=w||(y-top)%(h+14)>=h)return -1;
