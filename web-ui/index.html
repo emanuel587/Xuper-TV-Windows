@@ -1,60 +1,86 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>Xuper TV</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#090d13">
+<title>Xuper TV</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-shell">
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegación principal">
+    <a class="brand" href="#" aria-label="Xuper TV inicio">
+      <span class="brand-symbol"><svg viewBox="0 0 40 40"><path d="M7 8h8l9 12-9 12H7l9-12L7 8Z" fill="currentColor"/><path d="M23 8h8l-9 12 9 12h-8l-9-12L23 8Z" fill="currentColor" opacity=".58"/></svg></span>
+      <span class="brand-name">XUPER<span>TV</span><small>ENTRETENIMIENTO</small></span>
+    </a>
+    <div class="sidebar-divider"></div>
+    <nav class="nav-list">
+      <p class="nav-label">EXPLORAR</p>
+      <button class="nav-item active" data-page="Inicio" aria-current="page"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span><span>Inicio</span></button>
+      <button class="nav-item" data-page="TV en vivo"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 2 4 3 4-3M10 9l5 3-5 3z"/></svg></span><span>TV en vivo</span><i class="live-indicator"></i></button>
+      <button class="nav-item" data-page="Películas"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg></span><span>Películas</span></button>
+      <button class="nav-item" data-page="Series"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></span><span>Series</span></button>
+      <button class="nav-item" data-page="Favoritos"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span><span>Favoritos</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-divider"></div>
+      <button class="nav-item support-link" data-page="Apoyar"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6z"/></svg></span><span>Apoyar el proyecto</span></button>
+      <div class="profile-card"><div class="profile-avatar">X</div><div class="profile-copy"><strong>Mi Xuper</strong><span>Tu centro de entretenimiento</span></div><i class="profile-status"></i></div>
+      <div class="sidebar-foot">XUPER TV <span>PARA WINDOWS</span></div>
+    </div>
+  </aside>
+
+  <main class="main-view">
     <header class="topbar">
-      <a class="brand" href="#" aria-label="Xuper TV inicio"><span class="brand-mark"><i></i><i></i><i></i></span><span>XUPER<span class="brand-light">TV</span></span></a>
-      <div class="topbar-tools">
-        <button class="tool search-tool" id="search" aria-label="Buscar"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><span>Buscar</span><kbd>Ctrl K</kbd></button>
-        <button class="tool icon-tool" aria-label="Filtros"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10m-7 6h4"/><circle cx="8" cy="6" r="2"/><circle cx="15" cy="12" r="2"/></svg></button>
-        <span class="tool-divider"></span>
-        <button class="tool icon-tool" aria-label="Notificaciones"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>
-        <button class="profile" aria-label="Perfil">E</button>
+      <div class="topbar-context"><span class="context-mark"></span><span id="breadcrumb">XUPER TV <b>/</b> INICIO</span></div>
+      <div class="topbar-actions">
+        <button class="search-trigger" id="search" aria-label="Buscar en Xuper TV"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><span>Buscar canales, películas y series</span><kbd>Ctrl K</kbd></button>
+        <div class="service-state"><i></i><span id="service-status">Conectando</span></div>
+        <div class="top-avatar" aria-label="Xuper TV">X</div>
       </div>
     </header>
-    <aside class="sidebar" aria-label="Navegación principal">
-      <div class="nav-group"><p class="nav-caption">MENÚ PRINCIPAL</p>
-        <button class="nav-item active" data-page="Inicio"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg></span><span>Inicio</span></button>
-        <button class="nav-item" data-page="TV en vivo"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 2 4 3 4-3M9 10l6 4-6 4z"/></svg></span><span>TV en vivo</span><span class="live-dot"></span></button>
-        <button class="nav-item" data-page="Películas"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg></span><span>Películas</span></button>
-        <button class="nav-item" data-page="Series"><span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></span><span>Series</span></button>
-        <button class="nav-item" data-page="Favoritos"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span><span>Favoritos</span></button>
-      </div>
-      <div class="sidebar-bottom"><div class="sidebar-rule"></div><button class="nav-item" data-page="Apoyar"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6z"/></svg></span><span>Apoyar</span></button><div class="sidebar-foot">XUPER TV <span>WINDOWS</span></div></div>
-    </aside>
-    <main class="content" id="content">
-      <section class="welcome"><div><div class="eyebrow"><span class="eyebrow-line"></span> TU ENTRETENIMIENTO</div><h1>Descubre algo <em>extraordinario.</em></h1><p>Todo lo que te gusta, en un solo lugar.</p></div><div class="date-chip"><span class="status-pulse"></span><span id="service-status">Tu experiencia</span></div></section>
-      <section class="hero" aria-label="Contenido destacado">
-        <div class="hero-backdrop"></div><div class="hero-shade"></div><div class="hero-content">
-          <div class="hero-tag"><span class="sparkle">✦</span> SELECCIÓN DESTACADA</div>
-          <h2 id="hero-title">Tu próxima<br><span>gran historia.</span></h2>
-          <p id="hero-description">Explora tu catálogo y encuentra algo que te encante.</p>
-          <div class="hero-actions"><button class="primary-action" id="watch"><svg viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg> Ver ahora</button><button class="secondary-action" id="more"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg> Más información</button><button class="secondary-action" id="favorite"><svg viewBox="0 0 24 24"><path d="m12 20-1.4-1.2C5.4 15 2 12 2 8.3 2 5.3 4.4 3 7.4 3c1.7 0 3.4.8 4.6 2.1C13.2 3.8 14.9 3 16.6 3 19.6 3 22 5.3 22 8.3c0 3.7-3.4 6.7-8.6 10.5z"/></svg> Favorito</button></div>
+
+    <div class="content" id="content">
+      <section class="page-heading">
+        <div><div class="eyebrow"><i></i><span id="page-eyebrow">TU ESPACIO DE ENTRETENIMIENTO</span></div><h1 id="page-title">¿Qué quieres ver hoy?</h1><p id="page-subtitle">Todo lo que te gusta, reunido en un solo lugar.</p></div>
+      </section>
+
+      <section class="hero" id="hero" aria-label="Contenido destacado">
+        <div class="hero-backdrop" id="hero-backdrop"></div><div class="hero-vignette"></div>
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+        <div class="hero-copy">
+          <div class="hero-kicker"><span>✦</span><span id="hero-kicker-text">BIENVENIDO A XUPER TV</span></div>
+          <div class="hero-meta"><i></i><span id="hero-meta">UNA EXPERIENCIA PARA DISFRUTAR</span></div>
+          <h2 id="hero-title">Tu entretenimiento.<br><em>Sin límites.</em></h2>
+          <p id="hero-description">Canales en vivo, películas y series para encontrar siempre algo que ver.</p>
+          <div class="hero-actions">
+            <button class="primary-action" id="watch"><svg viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg><span id="watch-label">Explorar ahora</span></button>
+            <button class="secondary-action" id="more"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><span>Más información</span></button>
+            <button class="favorite-action" id="favorite" aria-label="Agregar a favoritos" title="Agregar a favoritos"><svg viewBox="0 0 24 24"><path d="M20.8 8.7c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6z"/></svg></button>
+          </div>
         </div>
-        <div class="hero-pagination"><span class="page-current"></span><span></span><span></span><span></span></div>
+        <div class="hero-art-wrap" id="hero-art-wrap"><img id="hero-art" alt="" fetchpriority="high"></div>
+        <div class="hero-bottomline"><span id="hero-index">XUPER TV</span><span class="hero-progress"><i></i><i></i><i></i><i></i></span></div>
       </section>
-      <section class="shelf-section"><div class="shelf-heading"><div><h3 id="shelf-title">Continúa explorando</h3><p>Tu contenido, organizado para disfrutarlo</p></div><button class="see-all" id="see-all">Ver todo <span>↗</span></button></div>
-        <div class="card-rail" id="card-rail" aria-label="Catálogo"><div class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/></svg></div><div><strong>El catálogo aparecerá aquí</strong><span>Conectaremos esta interfaz con los datos del servicio.</span></div></div></div>
-      </section>
-      <footer class="content-footer"><span>Una experiencia para disfrutar</span><span class="footer-mark">X<span>·</span></span></footer>
-    </main>
-  </div>
-  <dialog class="app-dialog" id="search-dialog">
-    <form method="dialog" class="dialog-close-row"><span class="dialog-kicker">BÚSQUEDA GLOBAL</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
-    <form id="search-form"><label for="search-query">¿Qué quieres ver?</label><div class="search-field"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="search-query" name="query" type="search" placeholder="Canales, películas o series..." autocomplete="off" required><button type="submit">Buscar</button></div><p class="dialog-hint">Busca en todo el catálogo disponible.</p></form>
-  </dialog>
-  <dialog class="app-dialog details-dialog" id="details-dialog">
-    <form method="dialog" class="dialog-close-row"><span class="dialog-kicker">DETALLES</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
-    <h2 id="details-title"></h2><p id="details-description"></p><button class="primary-action" id="details-watch"><svg viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg> Reproducir</button>
-  </dialog>
-  <div class="toast" id="toast" role="status"></div>
-  <script src="app.js"></script>
+
+      <section class="quick-section" id="quick-section" hidden><div class="section-heading"><div><span class="section-overline">A UN SOLO CLIC</span><h2>Explora Xuper</h2></div></div><div class="quick-grid" id="quick-grid"></div></section>
+      <div class="dynamic-shelves" id="dynamic-shelves"></div>
+      <footer class="content-footer"><span>Tu entretenimiento, a tu manera.</span><span class="footer-brand">X<span>·</span></span></footer>
+    </div>
+  </main>
+</div>
+
+<dialog class="app-dialog" id="search-dialog">
+  <form method="dialog" class="dialog-top"><span class="dialog-eyebrow">BÚSQUEDA GLOBAL</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
+  <form id="search-form"><label for="search-query">¿Qué quieres ver hoy?</label><div class="search-field"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="search-query" name="query" type="search" placeholder="Busca un canal, película o serie..." autocomplete="off" required><button type="submit">Buscar</button></div><p class="dialog-hint">Busca directamente en el catálogo disponible.</p></form>
+</dialog>
+<dialog class="app-dialog details-dialog" id="details-dialog">
+  <form method="dialog" class="dialog-top"><span class="dialog-eyebrow">DETALLES DEL CONTENIDO</span><button class="dialog-close" aria-label="Cerrar">×</button></form>
+  <div class="details-layout"><div class="details-poster" id="details-poster"></div><div class="details-copy"><span class="details-type" id="details-type">XUPER TV</span><h2 id="details-title"></h2><p id="details-description"></p><button class="primary-action" id="details-watch"><svg viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></svg> Reproducir / abrir</button></div></div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
 </body>
 </html>
