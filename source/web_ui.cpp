@@ -209,8 +209,8 @@ void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& statu
     }
     json<<']';
     std::ostringstream js;
-    js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
-      <<"window.xuperUI.setPage("<<json_quote(page)<<",false);"
+    js<<"if(window.xuperUI){window.xuperUI.setPage("<<json_quote(page)<<",false);"
+          <<"window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
       <<"window.xuperUI.setStatus("<<json_quote(status)<<");}";
     const auto script=js.str();
     webview_t handle=nullptr;
