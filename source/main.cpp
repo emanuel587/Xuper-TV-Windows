@@ -181,7 +181,12 @@ int main(int argc,char** argv){
                 continue;
             }
 #endif
-            if(event.type==SDL_WINDOWEVENT)redraw=true;
+            if(event.type==SDL_WINDOWEVENT){
+                redraw=true;
+#ifdef _WIN32
+                if(webui_active&&event.window.event==SDL_WINDOWEVENT_SIZE_CHANGED)webui.resize();
+#endif
+            }
             if(event.type==SDL_MOUSEWHEEL){previous|=event.wheel.y>0;next|=event.wheel.y<0;}
 // El puntero no cambia el foco al pasar por encima; solo un clic selecciona.
             if(event.type==SDL_MOUSEBUTTONDOWN||event.type==SDL_FINGERDOWN){
