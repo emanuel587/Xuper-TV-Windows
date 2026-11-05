@@ -155,7 +155,9 @@ void WebUi::thread_main() {
     bindings_[4]={this,SelectItem};
     bindings_[5]={this,Back};
     bindings_[6]={this,ToggleFavorite};
-    const char* names[]={"xuperReady","xuperNavigate","xuperPlay","xuperSearch","xuperSelectItem","xuperBack","xuperFavorite"};
+    bindings_[7]={this,Quit};
+    bindings_[8]={this,ToggleFullscreen};
+    const char* names[]={"xuperReady","xuperNavigate","xuperPlay","xuperSearch","xuperSelectItem","xuperBack","xuperFavorite","xuperQuit","xuperFullscreen"};
     bool ok=webview_set_title(webview,"Xuper TV")>=0 &&
             webview_set_size(webview,1360,850,WEBVIEW_HINT_NONE)>=0;
     if(ok&&parent_window_) {
@@ -165,7 +167,7 @@ void WebUi::thread_main() {
         if(child)SetWindowPos(child,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
                               SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED|SWP_SHOWWINDOW);
     }
-    for(size_t i=0;i<7&&ok;++i)
+    for(size_t i=0;i<9&&ok;++i)
         ok=webview_bind(webview,names[i],&WebUi::binding_callback,&bindings_[i])>=0;
 
     const std::string html=load_frontend();
