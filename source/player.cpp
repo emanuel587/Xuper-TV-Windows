@@ -185,6 +185,7 @@ std::string play(const std::string& source,SDL_Renderer* renderer,const std::vec
         int horizontal=0,vertical=0,jump=0,item_delta=0;SDL_Event event;
         while(SDL_PollEvent(&event)){
             if(event.type==SDL_QUIT)running=false;
+            if(event.type==SDL_WINDOWEVENT&&event.window.event==SDL_WINDOWEVENT_CLOSE)running=false;
             if(event.type==SDL_KEYDOWN&&!event.key.repeat)switch(event.key.keysym.sym){
                 case SDLK_ESCAPE:back=true;break;case SDLK_SPACE:activate=true;break;case SDLK_RETURN:activate=true;break;
                 case SDLK_x:case SDLK_TAB:settings=true;break;case SDLK_y:audio=true;break;case SDLK_s:subs=true;break;
