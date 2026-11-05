@@ -2,12 +2,15 @@ Xuper TV para Windows
 =====================
 
 1. Descomprime esta carpeta donde quieras (no hace falta instalar nada).
-2. Copia tu propio service.json junto a XuperTV.exe. Es el mismo archivo que
-   usas en la Switch (sdmc:/switch/xuperswitch/service.json). Este paquete no
-   incluye configuracion de ningun servicio; service.example.json solo muestra
-   los campos con valores ficticios.
-3. Abre XuperTV.exe. La primera vez crea device_state.json: conservalo al
-   actualizar, igual que en Switch.
+2. Deja service.template.json junto a XuperTV.exe con su nombre original. No lo
+   renombres como service.json. En una instalacion nueva, el programa usa esa
+   plantilla para crear service.json con una identidad unica del dispositivo.
+3. Abre XuperTV.exe. Cuando la activacion se complete, se crea device_state.json.
+   Conserva service.json y device_state.json al actualizar.
+4. Para trasladar una instalacion ya activada de Switch, copia tambien
+   service.json y device_state.json desde sdmc:/switch/xuperswitch/ a la carpeta
+   de XuperTV.exe, sustituyendo los archivos nuevos solo si quieres conservar
+   esa misma identidad.
 
 Opcional: pon un font.ttf junto al .exe (si no, usa Segoe UI de Windows) y un
 cacert.pem si tu red lo necesita (si no, usa los certificados de Windows).
