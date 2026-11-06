@@ -53,12 +53,16 @@
     $("section-kicker").textContent = copy[0]; $("shelf-title").textContent = copy[1]; $("shelf-description").textContent = copy[2];
     if (notifyNative) send("navigate",{page:activePage});
   }
+  let lastStatus = "";
   function setStatus(message) {
     const value = String(message || "Listo"); $("service-status").textContent = value;
     const pill = $("status-pill"), lower = value.toLocaleLowerCase();
-    pill.dataset.state = /error|no se pudo|fall[oó]|sin conexi[oó]n|no disponible/.test(lower) ? "error" :
+    pill.dataset.state = /error|no se pudo|fall[oó]|sin conexi[oó]n|sin sesi[oó]n|no disponible/.test(lower) ? "error" :
       /conectando|cargando|buscando|preparando|consultando/.test(lower) ? "loading" : "ready";
     pill.title = value;
+    // The pill is small and clips long text: show new errors in full as a toast.
+    if (pill.dataset.state === "error" && value !== lastStatus) notify(value);
+    lastStatus = value;
   }
   function kindLabel(kind) { return kindNames[kind] || "Contenido"; }
   function isSection(item) { return ["category","section","vod-category","vod-page","search-page","live-section","search-action","favorites","resume","donation"].includes(item.kind); }
@@ -185,6 +189,8 @@
   $("live-play").addEventListener("click",()=>send("play-selected"));
   $("details-open").addEventListener("click",()=>{detailsDialog.close();send("select-item",{index:detailIndex});});
   $("details-favorite").addEventListener("click",()=>{detailsDialog.close();send("favorite");});
+  $("btn-fullscreen").addEventListener("click",()=>send("fullscreen"));
+  $("btn-quit").addEventListener("click",()=>send("quit"));
   $("scroll-left").addEventListener("click",()=>rail.scrollBy({left:-520,behavior:"smooth"}));
   $("scroll-right").addEventListener("click",()=>rail.scrollBy({left:520,behavior:"smooth"}));
 
