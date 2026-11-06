@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <new>
 #include <sstream>
+#include <thread>
 #include <utility>
 
 namespace xs {
@@ -77,9 +78,36 @@ void dispatch_task(webview_t w,void* arg) {
     catch(...) { task->completed.set_exception(std::current_exception()); }
 }
 
+// Waits for done() while the calling (SDL) thread keeps servicing its Win32
+// message queue. WebView2 creates, re-parents and destroys a child window of the
+// SDL window from its own thread; those operations send messages (WM_PARENTNOTIFY,
+// focus/UI-state changes) to the SDL thread and block until it handles them. A
+// plain condition_variable wait or join() on the SDL thread therefore deadlocks.
+template<class Done>
+bool wait_pumping(std::chrono::milliseconds limit,Done done) {
+    const auto deadline=std::chrono::steady_clock::now()+limit;
+    while(!done()) {
+        if(std::chrono::steady_clock::now()>=deadline)return false;
+        if(SDL_WasInit(SDL_INIT_VIDEO))SDL_PumpEvents();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    return true;
+}
+
 } // namespace
 
 WebUi::~WebUi(){stop();}
+
+void WebUi::join_thread() {
+    if(!thread_.joinable())return;
+    // Do not detach: thread_main and WebView callbacks still reference this object.
+    // Keep pumping the SDL/Win32 queue until the owner thread can be joined safely.
+    while(!thread_finished_.load()) {
+        if(SDL_WasInit(SDL_INIT_VIDEO))SDL_PumpEvents();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    thread_.join();
+}
 
 bool WebUi::start(std::string& error,SDL_Window* parent) {
     parent_window_=nullptr;
@@ -101,23 +129,34 @@ bool WebUi::start(std::string& error,SDL_Window* parent) {
         std::lock_guard<std::mutex> lock(mutex_);
         startup_done_=false;startup_ok_=false;stop_requested_=false;startup_error_.clear();
     }
+    thread_finished_.store(false);
+    ready_.store(false);
+    last_sync_.clear();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        handle_=nullptr;child_window_=nullptr;webview_thread_id_=0;
+    }
     thread_=std::thread(&WebUi::thread_main,this);
-    std::unique_lock<std::mutex> lock(mutex_);
-    if(!startup_cv_.wait_for(lock,std::chrono::seconds(20),[this]{return startup_done_;})) {
+    const bool started=wait_pumping(std::chrono::seconds(20),[this]{
+        std::lock_guard<std::mutex> lock(mutex_);return startup_done_;});
+    if(!started) {
         error="WebView2 tardó demasiado en inicializar.";
-        stop_requested_=true;
-        lock.unlock();
-        if(thread_.joinable())thread_.join();
+        {std::lock_guard<std::mutex> lock(mutex_);stop_requested_=true;}
+        join_thread();
         return false;
     }
-    if(!startup_ok_) {
-        error=startup_error_.empty()?"No se pudo iniciar WebView2.":startup_error_;
-        lock.unlock();if(thread_.joinable())thread_.join();return false;
+    bool ok=false;std::string message;
+    {std::lock_guard<std::mutex> lock(mutex_);ok=startup_ok_;message=startup_error_;}
+    if(!ok) {
+        error=message.empty()?"No se pudo iniciar WebView2.":message;
+        join_thread();return false;
     }
     return true;
 }
 
 void WebUi::thread_main() {
+    // Signals join_thread() however this function returns (several early exits below).
+    struct FinishFlag{std::atomic<bool>& flag;~FinishFlag(){flag.store(true);}} finished{thread_finished_};
     const HRESULT com_result=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);
     if(FAILED(com_result)) {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -125,7 +164,15 @@ void WebUi::thread_main() {
         startup_done_=true;startup_cv_.notify_all();return;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        webview_thread_id_=GetCurrentThreadId();
+    }
     webview_t webview=webview_create(0,nullptr);
+    if(webview) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        child_window_=webview_get_window(webview);
+    }
     if(webview&&parent_window_) {
         HWND child=static_cast<HWND>(webview_get_window(webview));
         HWND parent=static_cast<HWND>(parent_window_);
@@ -206,6 +253,9 @@ void WebUi::binding_callback(const char* id,const char* request,void* arg) {
     auto* context=static_cast<BindingContext*>(arg);
     if(!context||!context->owner)return;
     std::string value;
+    // The page is now able to receive xuperUI calls; from here on identical
+    // sync payloads can be skipped safely (see WebUi::sync).
+    if(context->code==Ready)context->owner->ready_.store(true);
     if(request&&context->code!=Ready&&context->code!=Play&&context->code!=Back&&
        context->code!=Quit&&context->code!=ToggleFullscreen)
         value=webview::detail::json_parse(request,"",0);
@@ -263,18 +313,32 @@ void WebUi::sync(const Catalog& catalog,const Catalog& root_catalog,size_t selec
     const std::string current_json=serialize(catalog);
     const std::string root_json=serialize(root_catalog);
     std::ostringstream js;
-    js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<current_json<<','<<selected<<",{},"<<root_json<<");"
-      <<"window.xuperUI.setPage("<<json_quote(page)<<",false);"
+    // setPage first so renderCatalog already knows which page is active.
+    js<<"if(window.xuperUI){window.xuperUI.setPage("<<json_quote(page)<<",false);"
+      <<"window.xuperUI.renderCatalog("<<current_json<<','<<selected<<",{},"<<root_json<<");"
       <<"window.xuperUI.setStatus("<<json_quote(status)<<");}";
     const auto script=js.str();
+    // Spurious redraws (window focus/move events, image polling) would otherwise
+    // rebuild the whole DOM, dropping keyboard focus and scroll position.
+    // Before the page reports ready nothing is recorded, so the first real
+    // payload is always delivered.
+    const bool cache_sync=ready_.load();
+    if(cache_sync&&script==last_sync_)return;
     webview_t handle=nullptr;
     {std::lock_guard<std::mutex> lock(mutex_);handle=static_cast<webview_t>(handle_);}
     if(!handle)return;
     auto* task=new DispatchTask;
     task->work=[script](webview_t w){webview_eval(w,script.c_str());};
-    if(webview_dispatch(handle,&dispatch_task,task)<0)delete task;
+    if(webview_dispatch(handle,&dispatch_task,task)<0) {
+        delete task;
+        return;
+    }
+    if(cache_sync)last_sync_=script;
 }
 void WebUi::set_status(const std::string& status) {
+    // The page status changes outside sync(); forget the cache so the next
+    // sync() always restores the authoritative status text.
+    last_sync_.clear();
     const std::string script="if(window.xuperUI)window.xuperUI.setStatus("+json_quote(status)+");";
     webview_t handle=nullptr;
     {std::lock_guard<std::mutex> lock(mutex_);handle=static_cast<webview_t>(handle_);}
@@ -289,6 +353,10 @@ void WebUi::set_visible(bool visible) {
     {std::lock_guard<std::mutex> lock(mutex_);handle=static_cast<webview_t>(handle_);}
     if(!handle)return;
     auto* task=new DispatchTask;
+    // This runs on the WebView thread and only shows/hides/resizes its own
+    // window. Focus is NOT moved here: SetFocus/SetForegroundWindow on the SDL
+    // window would send messages to the main thread, which is blocked below
+    // waiting for this task (cross-thread deadlock, up to the 3 s timeout).
     task->work=[visible](webview_t w){
         HWND window=static_cast<HWND>(webview_get_window(w));
         if(window){
@@ -297,16 +365,24 @@ void WebUi::set_visible(bool visible) {
                 RECT bounds{};GetClientRect(parent,&bounds);
                 SetWindowPos(window,nullptr,0,0,bounds.right-bounds.left,bounds.bottom-bounds.top,
                              SWP_NOZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW);
-                SetForegroundWindow(parent);SetFocus(window);
             }else{
                 ShowWindow(window,visible?SW_SHOW:SW_HIDE);
-                if(parent&&!visible){SetForegroundWindow(parent);SetFocus(parent);}
             }
         }
     };
     auto future=task->completed.get_future();
     if(webview_dispatch(handle,&dispatch_task,task)<0){delete task;return;}
-    future.wait_for(std::chrono::seconds(3));
+    // Keep servicing SDL's message queue while the WebView thread runs the task
+    // (see wait_pumping): blocking here is what made show/hide hang for seconds.
+    if(!wait_pumping(std::chrono::seconds(3),[&future]{
+           return future.wait_for(std::chrono::seconds(0))==std::future_status::ready;}))return;
+    // The WebView thread is idle again; move focus from the thread that owns
+    // the SDL window, where the message pumping is well defined.
+    HWND parent=static_cast<HWND>(parent_window_);
+    HWND child=static_cast<HWND>(child_window_);
+    if(parent)SetForegroundWindow(parent);
+    if(visible&&child)SetFocus(child);
+    else if(parent)SetFocus(parent);
 }
 
 void WebUi::resize() {
@@ -327,6 +403,7 @@ void WebUi::resize() {
 }
 
 void WebUi::stop() {
+    unsigned long thread_id=0;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         stop_requested_=true;
@@ -334,9 +411,14 @@ void WebUi::stop() {
         // thread_main could destroy it between copying the pointer and calling
         // webview_terminate(), which makes shutdown timing-dependent.
         auto handle=static_cast<webview_t>(handle_);
-        if(handle)webview_terminate(handle);
+        if(handle){webview_terminate(handle);thread_id=webview_thread_id_;}
     }
-    if(thread_.joinable())thread_.join();
+    // Depending on the webview version, webview_terminate() may post WM_QUIT
+    // to the calling thread instead of the one running webview_run(), which
+    // would leave join() waiting forever. Posting directly is harmless if the
+    // loop already ended.
+    if(thread_id)PostThreadMessageW(static_cast<DWORD>(thread_id),WM_QUIT,0,0);
+    join_thread();
     active_=false;
 }
 

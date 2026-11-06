@@ -110,6 +110,13 @@ int main(int argc,char** argv){
         xs::Entry fav;fav.title="Favoritos";fav.kind=xs::EntryKind::Favorites;c.entries.push_back(fav);
         xs::Entry donate;donate.title="Apoyar el desarrollo";donate.kind=xs::EntryKind::Donation;c.entries.push_back(donate);return c;
     };
+    // Top-level tabs (TV en vivo, Peliculas, Series, Favoritos) are destinations,
+    // not drill-downs: Back from a tab's root must return to Inicio, not replay
+    // every tab visited earlier while the nav bar still highlights the current one.
+    auto enter_tab=[&]{
+        history.clear();
+        if(session)history.emplace_back(home(),size_t(0));else history.emplace_back(catalog,selected);
+    };
     auto load=[&](auto task,const std::string& message,bool splash=false){
         cancel_task=false;xs::service_reset_cancel();task_done=0;task_total=0;std::atomic<bool> complete{false};
 #ifdef _WIN32
@@ -119,6 +126,14 @@ int main(int argc,char** argv){
         std::thread worker([&]{task();complete.store(true);});
         while(!complete.load()||(splash&&SDL_GetTicks()-started<1100)){
             SDL_Event e;while(SDL_PollEvent(&e)){
+#ifdef _WIN32
+            if(webui_active&&e.type==webui.event_type()){
+                // Free the payload; honour Ctrl+Q sent from the WebView while loading.
+                std::unique_ptr<std::string> payload(static_cast<std::string*>(e.user.data1));
+                if(e.user.code==xs::WebUi::Quit){running=false;cancel_task=true;}
+                continue;
+            }
+#endif
             if(e.type==SDL_QUIT){running=false;cancel_task=true;}
             if(e.type==SDL_WINDOWEVENT&&e.window.event==SDL_WINDOWEVENT_CLOSE){running=false;cancel_task=true;}
             if(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_q&&(SDL_GetModState()&KMOD_CTRL)){running=false;cancel_task=true;}
@@ -163,6 +178,10 @@ int main(int argc,char** argv){
             if(webui_active&&event.type==webui.event_type()){
                 std::unique_ptr<std::string> payload(static_cast<std::string*>(event.user.data1));
                 const std::string value=payload?*payload:std::string{};
+                // A user action may leave the page's local state (e.g. the active tab)
+                // different from the engine's; never let the duplicate-payload cache
+                // swallow the next sync, or the UI stays out of step with the engine.
+                webui.invalidate();
                 switch(event.user.code){
                     case xs::WebUi::Ready: redraw=true; break;
                     case xs::WebUi::Navigate:
@@ -214,7 +233,15 @@ int main(int argc,char** argv){
             }
             if(event.type==SDL_KEYDOWN){
                 switch(event.key.keysym.sym){
-                    case SDLK_ESCAPE:back=true;if(history.empty()&&!donating)running=false;break;
+                    case SDLK_ESCAPE:back=true;
+#ifdef _WIN32
+                        // The borderless fullscreen window has no native close button, so Esc
+                        // at Inicio must not quit when the WebView UI is shown (it has its own
+                        // close button; Ctrl+Q and Alt+F4 also exit).
+                        if(!webui_active)
+#endif
+                        if(history.empty()&&!donating)running=false;
+                        break;
 #ifdef _WIN32
                     case SDLK_q:if((SDL_GetModState()&KMOD_CTRL)!=0)running=false;break;
                     case SDLK_F11:{
@@ -310,11 +337,11 @@ int main(int argc,char** argv){
 #endif
                 view.donation();redraw=true;continue;
             }
-            if(nav_action==4){history.emplace_back(catalog,selected);catalog={};catalog.title="Favoritos";catalog.entries=saved.favorites;selected=0;view.active_nav=4;view.nav_focus=-1;redraw=true;}
+            if(nav_action==4){enter_tab();catalog={};catalog.title="Favoritos";catalog.entries=saved.favorites;selected=0;view.active_nav=4;view.nav_focus=-1;redraw=true;}
             else if(session){
-                if(nav_action==1){history.emplace_back(catalog,selected);catalog={};catalog.title="TV en vivo";for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);selected=0;}
+                if(nav_action==1){enter_tab();catalog={};catalog.title="TV en vivo";for(const auto& e:root_catalog.entries)if(e.kind==xs::EntryKind::Category)catalog.entries.push_back(e);selected=0;}
                 else{const std::string type=nav_action==2?"1":"0";const auto i=std::find_if(root_catalog.entries.begin(),root_catalog.entries.end(),[&](const xs::Entry& e){return e.kind==xs::EntryKind::Section&&e.program_type==type;});
-                    if(i!=root_catalog.entries.end()){xs::BrowseResult result;load([&]{result=xs::service_browse(session,*i);},"Cargando categorias...");status=result.status;if(result.ok){history.emplace_back(catalog,selected);catalog=std::move(result.catalog);catalog.title=i->title;selected=0;}}
+                    if(i!=root_catalog.entries.end()){xs::BrowseResult result;load([&]{result=xs::service_browse(session,*i);},"Cargando categorias...");status=result.status;if(result.ok){enter_tab();catalog=std::move(result.catalog);catalog.title=i->title;selected=0;}}
                     else status="Esta seccion no esta disponible en el servicio.";
                 }view.active_nav=nav_action;view.nav_focus=-1;redraw=true;
             }else{status="Sin sesion. Pulsa Y para reintentar la conexion.";redraw=true;}
@@ -351,9 +378,6 @@ int main(int argc,char** argv){
             catalog=std::move(history.back().first);selected=history.back().second;history.pop_back();
             status="Elige un titulo o canal.";if(history.empty())view.active_nav=0;redraw=true;
         }
-#ifdef _WIN32
-        else if(back&&webui_active&&!donating&&history.empty())running=false;
-#endif
         if(!catalog.entries.empty()){
             const size_t cols=view.columns(catalog),page=view.page_size(catalog);
             if(up){selected=selected>=cols?selected-cols:selected;redraw=true;}
