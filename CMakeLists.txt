@@ -62,6 +62,14 @@ target_link_libraries(XuperTV PRIVATE
   PkgConfig::PNG PkgConfig::WEBP JPEG::JPEG ${XUPER_MBEDCRYPTO} Threads::Threads)
 
 if(WIN32)
+  # Small independent diagnostic client: same authorized service adapter, no Xuper UI.
+  add_executable(XuperCatalogTest WIN32
+    tools/simple_catalog_test.cpp source/service.cpp source/trace.cpp
+    source/codec.cpp source/ranger_codec.cpp source/catalog.cpp)
+  target_link_libraries(XuperCatalogTest PRIVATE PkgConfig::CURL ${XUPER_MBEDCRYPTO} Threads::Threads)
+  target_link_libraries(XuperCatalogTest PRIVATE comctl32)
+
+if(WIN32)
   # WebView2 frontend is hosted with the MSYS2 MinGW-compatible webview headers.
   find_path(WEBVIEW_INCLUDE_DIR NAMES webview/webview.h REQUIRED)
   find_path(WEBVIEW2_INCLUDE_DIR NAMES WebView2.h REQUIRED)

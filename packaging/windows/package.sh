@@ -20,6 +20,11 @@ mkdir -p "$out"
 # Copiar ejecutable
 cp "$exe" "$out/"
 
+# Standalone catalog-only test app; uses the same local service template.
+probe="$build/XuperCatalogTest.exe"
+[ -f "$probe" ] || { echo "No existe $probe; compila primero." >&2; exit 1; }
+cp "$probe" "$out/"
+
 # Copiar DLL necesarias
 ldd "$exe" |
     awk '/=>/ {print $3}' |
