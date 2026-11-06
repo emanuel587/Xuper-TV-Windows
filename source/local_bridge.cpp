@@ -16,6 +16,7 @@
 #include <cctype>
 #include <cstring>
 #include <map>
+#include <functional>
 
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"winhttp.lib")
