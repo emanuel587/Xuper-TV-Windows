@@ -39,7 +39,7 @@ std::string resolve_ref(const std::string& base,const std::string& ref){
  size_t scheme=base.find("://"),slash=base.find('/',scheme+3);std::string origin=slash==std::string::npos?base:base.substr(0,slash);
  if(ref.rfind("//",0)==0)return base.substr(0,scheme+1)+ref;
  if(ref[0]=='/')return origin+ref;
- std::string dir=base.substr(0,base.find_last_of('/')+1);return dir+ref;
+ std::string dir=clean.substr(0,clean.find_last_of('/')+1);return dir+ref;
 }
 std::string rewrite_hls(const std::string& body,const std::string& base,const std::string& token,const std::function<std::string(const std::string&)>& add_url){
  std::istringstream in(body);std::string line,out;
