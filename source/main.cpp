@@ -1,5 +1,9 @@
 #include "catalog.hpp"
 #include "player.hpp"
+#ifdef _WIN32
+#include "local_bridge.hpp"
+#include <shellapi.h>
+#endif
 #include "service.hpp"
 #include "view.hpp"
 #include "trace.hpp"
@@ -98,6 +102,8 @@ int main(int argc,char** argv){
     size_t selected=0;bool running=true,redraw=true,autoload=true,donating=false;
 #ifdef _WIN32
     std::string web_search_query;
+    xs::LocalBridge local_bridge;
+    bool external_play=false;
 #endif
     xs::Catalog root_catalog;
     std::atomic<bool> cancel_task{false};std::atomic<size_t> task_done{0},task_total{0};
@@ -193,6 +199,7 @@ int main(int argc,char** argv){
                         else if(value=="Apoyar")nav_action=5;
                         break;
                     case xs::WebUi::Play: play=true; break;
+                    case xs::WebUi::ExternalPlay: external_play=true;play=true;break;
                     case xs::WebUi::Search: web_search_query=value;search=!value.empty();break;
                     case xs::WebUi::SelectItem:
                         try {const auto index=static_cast<size_t>(std::stoul(value));if(index<catalog.entries.size()){selected=index;play=true;}}
@@ -433,6 +440,22 @@ int main(int argc,char** argv){
                         }
                         for(size_t i=0;i<queue.size();++i){options.items.push_back(catalog.entries[queue[i]].title);if(queue[i]==selected)options.item=static_cast<int>(i);}
                         if(!source.empty()){
+#ifdef _WIN32
+                            if(external_play){
+                                std::string local_url,bridge_error;
+                                if(local_bridge.start(source,headers,local_url,bridge_error)){
+                                    const std::string args="\\""+local_url+"\\"";
+                                    HINSTANCE launched=ShellExecuteA(nullptr,"open","vlc.exe",args.c_str(),nullptr,SW_SHOWNORMAL);
+                                    if(reinterpret_cast<INT_PTR>(launched)>32)status="Canal enviado a VLC. El puente local mantiene la autorización.";
+                                    else {local_bridge.stop();status="No se encontró VLC o Windows no pudo iniciarlo.";}
+                                }else status="No se pudo preparar VLC: "+bridge_error;
+                                external_play=false;
+                                redraw=true;
+                                continue_playback=false;
+                                break;
+                            }
+                            external_play=false;
+#endif
                             xs::PlaybackOutcome outcome;
 #ifdef _WIN32
                             if(webui_active)webui.set_visible(false);
