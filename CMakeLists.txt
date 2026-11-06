@@ -56,7 +56,7 @@ set(XUPER_CORE source/catalog.cpp source/codec.cpp source/ranger_codec.cpp)
 
 add_executable(XuperTV
   source/main.cpp source/player.cpp source/view.cpp source/artwork.cpp source/trace.cpp
-  source/service.cpp ${XUPER_CORE})
+  source/service.cpp source/local_bridge.cpp ${XUPER_CORE})
 target_link_libraries(XuperTV PRIVATE
   PkgConfig::SDL2 PkgConfig::SDL2_TTF PkgConfig::MPV PkgConfig::CURL
   PkgConfig::PNG PkgConfig::WEBP JPEG::JPEG ${XUPER_MBEDCRYPTO} Threads::Threads)
@@ -67,7 +67,7 @@ if(WIN32)
   find_path(WEBVIEW2_INCLUDE_DIR NAMES WebView2.h REQUIRED)
   target_include_directories(XuperTV PRIVATE ${WEBVIEW_INCLUDE_DIR} ${WEBVIEW2_INCLUDE_DIR})
   target_sources(XuperTV PRIVATE source/web_ui.cpp)
-  target_link_libraries(XuperTV PRIVATE advapi32 ole32 shell32 shlwapi user32 version)
+  target_link_libraries(XuperTV PRIVATE advapi32 ole32 shell32 shlwapi user32 version winhttp ws2_32)
   add_custom_command(TARGET XuperTV POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/web-ui ${CMAKE_CURRENT_BINARY_DIR}/web-ui)

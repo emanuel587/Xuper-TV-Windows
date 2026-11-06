@@ -133,7 +133,7 @@
     $("live-detail-title").textContent=current?.title || "Selecciona un canal";
     $("live-detail-kind").textContent=current ? "CANAL DISPONIBLE" : "CANAL SELECCIONADO";
     $("live-detail-description").textContent=current?.description || "La información disponible del canal aparecerá aquí.";
-    $("live-play").disabled=!current;
+    $("live-play").disabled=!current; $("live-external").disabled=!current;
     const image=$("live-preview-artwork");
     if(current?.artwork){image.src=current.artwork;image.hidden=false;}else{image.removeAttribute("src");image.hidden=true;}
   }
@@ -187,6 +187,7 @@
   $("hero-details").addEventListener("click",()=>openDetails(selectedIndex));
   $("hero-favorite").addEventListener("click",()=>send("favorite"));
   $("live-play").addEventListener("click",()=>send("play-selected"));
+  $("live-external").addEventListener("click",()=>{const index=items[selectedIndex]?.kind==="channel"?selectedIndex:items.findIndex(item=>item.kind==="channel");if(index<0){notify("Selecciona un canal primero.");return;}window.xuperSelectItem?.(index);window.xuperExternalPlay?.();});
   $("details-open").addEventListener("click",()=>{detailsDialog.close();send("select-item",{index:detailIndex});});
   $("details-favorite").addEventListener("click",()=>{detailsDialog.close();send("favorite");});
   $("btn-fullscreen").addEventListener("click",()=>send("fullscreen"));
