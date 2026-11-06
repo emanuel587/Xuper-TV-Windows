@@ -2,6 +2,7 @@
 #include "player.hpp"
 #ifdef _WIN32
 #include "local_bridge.hpp"
+#include <windows.h>
 #include <shellapi.h>
 #endif
 #include "service.hpp"
