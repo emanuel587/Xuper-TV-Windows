@@ -31,13 +31,14 @@ bool split_url(const std::string& u,std::wstring& host,std::wstring& path,bool& 
  size_t a=p+3,b=u.find_first_of("/?#",a);std::string authority=u.substr(a,b==std::string::npos?b:b-a);if(authority.empty()||authority.find('@')!=std::string::npos)return false;
  port=secure?443:80;size_t colon=authority.rfind(':');if(colon!=std::string::npos&&authority.find(']')==std::string::npos){try{port=static_cast<unsigned short>(std::stoi(authority.substr(colon+1)));}catch(...){return false;}authority.resize(colon);}
  if(authority.empty())return false;std::string target=b==std::string::npos?"/":u.substr(b);if(target[0]=='?'||target[0]=='#')target="/"+target;
- auto widen=[](const std::string& s){int n=MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,nullptr,0);std::wstring w(n?static_cast<size_t>(n-1):0,L'\0');if(n>1)MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,&w[0],n);return w;};
+ auto widen=[](const std::string& s){int n=MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,nullptr,0);std::wstring w(n?static_cast<size_t>(n):0,L'\\0');if(n>1){MultiByteToWideChar(CP_UTF8,0,s.c_str(),-1,&w[0],n);w.resize(static_cast<size_t>(n-1));}return w;};
  host=widen(authority);path=widen(target);return !host.empty()&&!path.empty();
 }
 std::string resolve_ref(const std::string& base,const std::string& ref){
  if(ref.empty())return ref;if(ref.find("://")!=std::string::npos)return ref;
- size_t scheme=base.find("://"),slash=base.find('/',scheme+3);std::string origin=slash==std::string::npos?base:base.substr(0,slash);
- if(ref.rfind("//",0)==0)return base.substr(0,scheme+1)+ref;
+ std::string clean=base.substr(0,base.find_first_of("?#"));
+ size_t scheme=clean.find("://"),slash=clean.find('/',scheme+3);std::string origin=slash==std::string::npos?clean:clean.substr(0,slash);
+ if(ref.rfind("//",0)==0)return clean.substr(0,scheme+1)+ref;
  if(ref[0]=='/')return origin+ref;
  std::string dir=clean.substr(0,clean.find_last_of('/')+1);return dir+ref;
 }
@@ -66,15 +67,16 @@ struct LocalBridge::Impl {
   HINTERNET conn=session?WinHttpConnect(session,host.c_str(),port,0):nullptr;
   HINTERNET request=conn?WinHttpOpenRequest(conn,method=="HEAD"?L"HEAD":L"GET",path.c_str(),nullptr,WINHTTP_NO_REFERER,WINHTTP_DEFAULT_ACCEPT_TYPES,secure?WINHTTP_FLAG_SECURE:0):nullptr;
   std::wstring extra;
-  for(const auto& h:headers){if(h.first.find_first_of("\r\n:")!=std::string::npos||h.second.find_first_of("\r\n")!=std::string::npos)continue;int n=MultiByteToWideChar(CP_UTF8,0,(h.first+": "+h.second+"\r\n").c_str(),-1,nullptr,0);if(n>1){std::wstring w(n-1,L'\0');MultiByteToWideChar(CP_UTF8,0,(h.first+": "+h.second+"\r\n").c_str(),-1,&w[0],n);extra+=w;}}
-  std::string client_headers;std::istringstream hin(req);std::string hline;std::getline(hin,hline);while(std::getline(hin,hline)&&hline!="\r"){if(hline.back()=='\r')hline.pop_back();auto c=hline.find(':');if(c==std::string::npos)continue;std::string name=lower(hline.substr(0,c));if(name=="range"||name=="if-range"||name=="if-none-match")client_headers+=hline+"\r\n";}
-  if(request){if(!client_headers.empty()){int n=MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,nullptr,0);std::wstring w(n?static_cast<size_t>(n-1):0,L'\0');if(n>1)MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,&w[0],n);extra+=w;}
-   DWORD redirect_policy=WINHTTP_OPTION_REDIRECT_POLICY_NEVER;WinHttpSetOption(request,WINHTTP_OPTION_REDIRECT_POLICY,&redirect_policy,sizeof(redirect_policy));\n   BOOL ok=WinHttpSendRequest(request,extra.empty()?WINHTTP_NO_ADDITIONAL_HEADERS:extra.c_str(),extra.empty()?0:static_cast<DWORD>(extra.size()),WINHTTP_NO_REQUEST_DATA,0,0,0)&&WinHttpReceiveResponse(request,nullptr);
+  for(const auto& h:headers){if(h.first.find_first_of("\\r\\n:")!=std::string::npos||h.second.find_first_of("\\r\\n")!=std::string::npos)continue;std::string line=h.first+": "+h.second+"\\r\\n";int n=MultiByteToWideChar(CP_UTF8,0,line.c_str(),-1,nullptr,0);if(n>1){std::wstring w(n,L'\\0');MultiByteToWideChar(CP_UTF8,0,line.c_str(),-1,&w[0],n);w.resize(static_cast<size_t>(n-1));extra+=w;}}
+  std::string client_headers;std::istringstream hin(req);std::string hline;std::getline(hin,hline);while(std::getline(hin,hline)&&hline!="\\r"){if(!hline.empty()&&hline.back()=='\\r')hline.pop_back();auto c=hline.find(':');if(c==std::string::npos)continue;std::string name=lower(hline.substr(0,c));if(name=="range"||name=="if-range"||name=="if-none-match")client_headers+=hline+"\\r\\n";}
+  if(request){if(!client_headers.empty()){int n=MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,nullptr,0);std::wstring w(n?static_cast<size_t>(n):0,L'\\0');if(n>1){MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,&w[0],n);w.resize(static_cast<size_t>(n-1));}extra+=w;}
+   DWORD redirect_policy=WINHTTP_OPTION_REDIRECT_POLICY_NEVER;WinHttpSetOption(request,WINHTTP_OPTION_REDIRECT_POLICY,&redirect_policy,sizeof(redirect_policy));
+   BOOL ok=WinHttpSendRequest(request,extra.empty()?WINHTTP_NO_ADDITIONAL_HEADERS:extra.c_str(),extra.empty()?0:static_cast<DWORD>(extra.size()),WINHTTP_NO_REQUEST_DATA,0,0,0)&&WinHttpReceiveResponse(request,nullptr);
    if(ok){DWORD status=0,size=sizeof(status);WinHttpQueryHeaders(request,WINHTTP_QUERY_STATUS_CODE|WINHTTP_QUERY_FLAG_NUMBER,WINHTTP_HEADER_NAME_BY_INDEX,&status,&size,WINHTTP_NO_HEADER_INDEX);
     wchar_t ctype[256]{};size=sizeof(ctype);WinHttpQueryHeaders(request,WINHTTP_QUERY_CONTENT_TYPE,WINHTTP_HEADER_NAME_BY_INDEX,ctype,&size,WINHTTP_NO_HEADER_INDEX);
     wchar_t crange[256]{};size=sizeof(crange);WinHttpQueryHeaders(request,WINHTTP_QUERY_CONTENT_RANGE,WINHTTP_HEADER_NAME_BY_INDEX,crange,&size,WINHTTP_NO_HEADER_INDEX);
     wchar_t length[64]{};size=sizeof(length);WinHttpQueryHeaders(request,WINHTTP_QUERY_CONTENT_LENGTH,WINHTTP_HEADER_NAME_BY_INDEX,length,&size,WINHTTP_NO_HEADER_INDEX);
-    auto narrow=[](const wchar_t* w){int n=WideCharToMultiByte(CP_UTF8,0,w,-1,nullptr,0,nullptr,nullptr);std::string s(n?static_cast<size_t>(n-1):0,'\0');if(n>1)WideCharToMultiByte(CP_UTF8,0,w,-1,&s[0],n,nullptr,nullptr);return s;};
+    auto narrow=[](const wchar_t* w){int n=WideCharToMultiByte(CP_UTF8,0,w,-1,nullptr,0,nullptr,nullptr);std::string out(n?static_cast<size_t>(n):0,'\\0');if(n>1){WideCharToMultiByte(CP_UTF8,0,w,-1,&out[0],n,nullptr,nullptr);out.resize(static_cast<size_t>(n-1));}return out;};
     std::string ct=narrow(ctype),cl=narrow(length),range=narrow(crange);bool playlist=lower(ct).find("mpegurl")!=std::string::npos||lower(url).find(".m3u8")!=std::string::npos;
     std::string response="HTTP/1.1 "+std::to_string(status)+" "+(status==206?"Partial Content":status==200?"OK":"Upstream Error")+"\r\nConnection: close\r\n";
     if(!ct.empty())response+="Content-Type: "+ct+"\r\n";if(!range.empty())response+="Content-Range: "+range+"\r\n";
