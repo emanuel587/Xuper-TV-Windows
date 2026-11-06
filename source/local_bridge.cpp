@@ -64,6 +64,7 @@ struct LocalBridge::Impl {
   std::string url=source;std::string key=target.substr(token.size()+2);if(!key.empty()){std::lock_guard<std::mutex> lock(urls_mutex);auto it=urls.find(key);if(it==urls.end()){closesocket(s);return;}url=it->second;}
   std::wstring host,path;bool secure=false;unsigned short port=0;if(!split_url(url,host,path,secure,port)){closesocket(s);return;}
   HINTERNET session=WinHttpOpen(L"XuperTV-LocalRelay/1.0",WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,WINHTTP_NO_PROXY_NAME,WINHTTP_NO_PROXY_BYPASS,0);
+  if(session)WinHttpSetTimeouts(session,5000,5000,15000,15000);
   HINTERNET conn=session?WinHttpConnect(session,host.c_str(),port,0):nullptr;
   HINTERNET request=conn?WinHttpOpenRequest(conn,method=="HEAD"?L"HEAD":L"GET",path.c_str(),nullptr,WINHTTP_NO_REFERER,WINHTTP_DEFAULT_ACCEPT_TYPES,secure?WINHTTP_FLAG_SECURE:0):nullptr;
   std::wstring extra;
