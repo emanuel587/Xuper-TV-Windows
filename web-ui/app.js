@@ -187,7 +187,7 @@
   $("hero-details").addEventListener("click",()=>openDetails(selectedIndex));
   $("hero-favorite").addEventListener("click",()=>send("favorite"));
   $("live-play").addEventListener("click",()=>send("play-selected"));
-  $("live-external").addEventListener("click",()=>{if(window.xuperExternalPlay)window.xuperExternalPlay();else notify("La función de reproductor externo no está disponible.");});
+  $("live-external").addEventListener("click",()=>{const index=items[selectedIndex]?.kind==="channel"?selectedIndex:items.findIndex(item=>item.kind==="channel");if(index<0){notify("Selecciona un canal primero.");return;}window.xuperSelectItem?.(index);window.xuperExternalPlay?.();});
   $("details-open").addEventListener("click",()=>{detailsDialog.close();send("select-item",{index:detailIndex});});
   $("details-favorite").addEventListener("click",()=>{detailsDialog.close();send("favorite");});
   $("btn-fullscreen").addEventListener("click",()=>send("fullscreen"));
