@@ -60,7 +60,7 @@ struct LocalBridge::Impl {
   std::string req;char buf[4096];while(req.find("\r\n\r\n")==std::string::npos&&req.size()<16384){int n=recv(s,buf,sizeof(buf),0);if(n<=0){closesocket(s);return;}req.append(buf,n);}
   std::istringstream in(req);std::string method,target,version;in>>method>>target>>version;
   if((method!="GET"&&method!="HEAD")||target.rfind("/"+token+"/",0)!=0){const char* r="HTTP/1.1 404 Not Found\r\nContent-Length:0\r\nConnection:close\r\n\r\n";send_all(s,r,strlen(r));closesocket(s);return;}
-  std::string url=source;size_t q=target.find("?u=");if(q!=std::string::npos){std::string raw=target.substr(q+3);if(raw.empty()||raw.find_first_of(" \r\n")!=std::string::npos){closesocket(s);return;}url=raw;}
+  std::string url=source;std::string key=target.substr(token.size()+2);if(!key.empty()){std::lock_guard<std::mutex> lock(urls_mutex);auto it=urls.find(key);if(it==urls.end()){closesocket(s);return;}url=it->second;}
   std::wstring host,path;bool secure=false;unsigned short port=0;if(!split_url(url,host,path,secure,port)){closesocket(s);return;}
   HINTERNET session=WinHttpOpen(L"XuperTV-LocalRelay/1.0",WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,WINHTTP_NO_PROXY_NAME,WINHTTP_NO_PROXY_BYPASS,0);
   HINTERNET conn=session?WinHttpConnect(session,host.c_str(),port,0):nullptr;
