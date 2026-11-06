@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <map>
 
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"winhttp.lib")
@@ -39,9 +40,9 @@ std::string resolve_ref(const std::string& base,const std::string& ref){
  if(ref[0]=='/')return origin+ref;
  std::string dir=base.substr(0,base.find_last_of('/')+1);return dir+ref;
 }
-std::string rewrite_hls(const std::string& body,const std::string& base,const std::string& token){
+std::string rewrite_hls(const std::string& body,const std::string& base,const std::string& token,const std::function<std::string(const std::string&)>& add_url){
  std::istringstream in(body);std::string line,out;
- auto local=[&](const std::string& u){return "/"+token+"/?u="+u;};
+ auto local=[&](const std::string& u){return "/"+token+"/"+add_url(u);};
  while(std::getline(in,line)){
   if(!line.empty()&&line.back()=='\r')line.pop_back();
   if(line.rfind("#",0)==0){
@@ -53,7 +54,7 @@ std::string rewrite_hls(const std::string& body,const std::string& base,const st
 }
 }
 struct LocalBridge::Impl {
- SOCKET listener=INVALID_SOCKET;std::thread accept_thread;std::atomic<bool> running{false};std::string token,source;std::vector<std::pair<std::string,std::string>> headers;std::mutex clients_mutex;std::vector<std::thread> clients;
+ SOCKET listener=INVALID_SOCKET;std::thread accept_thread;std::atomic<bool> running{false};std::string token,source;std::vector<std::pair<std::string,std::string>> headers;std::mutex urls_mutex;std::map<std::string,std::string> urls;std::atomic<unsigned long long> next_url{1};std::mutex clients_mutex;std::vector<std::thread> clients;
  void serve(SOCKET s){
   std::string req;char buf[4096];while(req.find("\r\n\r\n")==std::string::npos&&req.size()<16384){int n=recv(s,buf,sizeof(buf),0);if(n<=0){closesocket(s);return;}req.append(buf,n);}
   std::istringstream in(req);std::string method,target,version;in>>method>>target>>version;
@@ -67,7 +68,7 @@ struct LocalBridge::Impl {
   for(const auto& h:headers){if(h.first.find_first_of("\r\n:")!=std::string::npos||h.second.find_first_of("\r\n")!=std::string::npos)continue;int n=MultiByteToWideChar(CP_UTF8,0,(h.first+": "+h.second+"\r\n").c_str(),-1,nullptr,0);if(n>1){std::wstring w(n-1,L'\0');MultiByteToWideChar(CP_UTF8,0,(h.first+": "+h.second+"\r\n").c_str(),-1,&w[0],n);extra+=w;}}
   std::string client_headers;std::istringstream hin(req);std::string hline;std::getline(hin,hline);while(std::getline(hin,hline)&&hline!="\r"){if(hline.back()=='\r')hline.pop_back();auto c=hline.find(':');if(c==std::string::npos)continue;std::string name=lower(hline.substr(0,c));if(name=="range"||name=="if-range"||name=="if-none-match")client_headers+=hline+"\r\n";}
   if(request){if(!client_headers.empty()){int n=MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,nullptr,0);std::wstring w(n?static_cast<size_t>(n-1):0,L'\0');if(n>1)MultiByteToWideChar(CP_UTF8,0,client_headers.c_str(),-1,&w[0],n);extra+=w;}
-   BOOL ok=WinHttpSendRequest(request,extra.empty()?WINHTTP_NO_ADDITIONAL_HEADERS:extra.c_str(),extra.empty()?0:static_cast<DWORD>(extra.size()),WINHTTP_NO_REQUEST_DATA,0,0,0)&&WinHttpReceiveResponse(request,nullptr);
+   DWORD redirect_policy=WINHTTP_OPTION_REDIRECT_POLICY_NEVER;WinHttpSetOption(request,WINHTTP_OPTION_REDIRECT_POLICY,&redirect_policy,sizeof(redirect_policy));\n   BOOL ok=WinHttpSendRequest(request,extra.empty()?WINHTTP_NO_ADDITIONAL_HEADERS:extra.c_str(),extra.empty()?0:static_cast<DWORD>(extra.size()),WINHTTP_NO_REQUEST_DATA,0,0,0)&&WinHttpReceiveResponse(request,nullptr);
    if(ok){DWORD status=0,size=sizeof(status);WinHttpQueryHeaders(request,WINHTTP_QUERY_STATUS_CODE|WINHTTP_QUERY_FLAG_NUMBER,WINHTTP_HEADER_NAME_BY_INDEX,&status,&size,WINHTTP_NO_HEADER_INDEX);
     wchar_t ctype[256]{};size=sizeof(ctype);WinHttpQueryHeaders(request,WINHTTP_QUERY_CONTENT_TYPE,WINHTTP_HEADER_NAME_BY_INDEX,ctype,&size,WINHTTP_NO_HEADER_INDEX);
     wchar_t crange[256]{};size=sizeof(crange);WinHttpQueryHeaders(request,WINHTTP_QUERY_CONTENT_RANGE,WINHTTP_HEADER_NAME_BY_INDEX,crange,&size,WINHTTP_NO_HEADER_INDEX);
@@ -77,7 +78,7 @@ struct LocalBridge::Impl {
     std::string response="HTTP/1.1 "+std::to_string(status)+" "+(status==206?"Partial Content":status==200?"OK":"Upstream Error")+"\r\nConnection: close\r\n";
     if(!ct.empty())response+="Content-Type: "+ct+"\r\n";if(!range.empty())response+="Content-Range: "+range+"\r\n";
     if(!playlist&&!cl.empty())response+="Content-Length: "+cl+"\r\n";
-    if(playlist){std::string body;DWORD avail=0;while(WinHttpQueryDataAvailable(request,&avail)&&avail){std::vector<char> b(avail);DWORD got=0;if(!WinHttpReadData(request,b.data(),avail,&got)||!got)break;if(body.size()+got>8*1024*1024)break;body.append(b.data(),got);}std::string rewritten=rewrite_hls(body,url,token);response+="Content-Type: application/vnd.apple.mpegurl\r\nContent-Length: "+std::to_string(rewritten.size())+"\r\n\r\n";send_all(s,response.data(),response.size());send_all(s,rewritten.data(),rewritten.size());}
+    if(playlist){std::string body;DWORD avail=0;while(WinHttpQueryDataAvailable(request,&avail)&&avail){std::vector<char> b(avail);DWORD got=0;if(!WinHttpReadData(request,b.data(),avail,&got)||!got)break;if(body.size()+got>8*1024*1024)break;body.append(b.data(),got);}std::string rewritten=rewrite_hls(body,url,token,[this](const std::string& u){std::string id=std::to_string(next_url.fetch_add(1));std::lock_guard<std::mutex> lock(urls_mutex);urls[id]=u;return id;});response+="Content-Type: application/vnd.apple.mpegurl\r\nContent-Length: "+std::to_string(rewritten.size())+"\r\n\r\n";send_all(s,response.data(),response.size());send_all(s,rewritten.data(),rewritten.size());}
     else{response+="\r\n";send_all(s,response.data(),response.size());if(method!="HEAD"){DWORD avail=0;while(WinHttpQueryDataAvailable(request,&avail)&&avail){std::vector<char>b((std::min)(avail,DWORD(65536)));DWORD got=0;if(!WinHttpReadData(request,b.data(),static_cast<DWORD>(b.size()),&got)||!got)break;if(!send_all(s,b.data(),got))break;}}}
    }else{const char* r="HTTP/1.1 502 Bad Gateway\r\nContent-Length:0\r\nConnection:close\r\n\r\n";send_all(s,r,strlen(r));}
   }
@@ -94,10 +95,10 @@ bool LocalBridge::start(const std::string& source,const std::vector<std::pair<st
  sockaddr_in addr{};addr.sin_family=AF_INET;addr.sin_addr.s_addr=htonl(INADDR_LOOPBACK);addr.sin_port=0;
  if(bind(impl_->listener,reinterpret_cast<sockaddr*>(&addr),sizeof(addr))==SOCKET_ERROR||listen(impl_->listener,16)==SOCKET_ERROR){closesocket(impl_->listener);impl_->listener=INVALID_SOCKET;WSACleanup();error="No se pudo abrir el puerto local.";return false;}
  int len=sizeof(addr);getsockname(impl_->listener,reinterpret_cast<sockaddr*>(&addr),&len);
- impl_->source=source;impl_->headers=headers;impl_->token=random_token();impl_->running=true;impl_->accept_thread=std::thread([this]{impl_->run();});
+ impl_->source=source;impl_->headers=headers;impl_->token=random_token();impl_->urls.clear();impl_->next_url=1;impl_->running=true;impl_->accept_thread=std::thread([this]{impl_->run();});
  local_url="http://127.0.0.1:"+std::to_string(ntohs(addr.sin_port))+"/"+impl_->token+"/";
  return true;
 }
-void LocalBridge::stop(){if(!impl_||!impl_->running.exchange(false))return;if(impl_->listener!=INVALID_SOCKET){shutdown(impl_->listener,SD_BOTH);closesocket(impl_->listener);impl_->listener=INVALID_SOCKET;}if(impl_->accept_thread.joinable())impl_->accept_thread.join();{std::lock_guard<std::mutex> l(impl_->clients_mutex);for(auto& t:impl_->clients)if(t.joinable())t.join();impl_->clients.clear();}impl_->headers.clear();impl_->source.clear();impl_->token.clear();WSACleanup();}
+void LocalBridge::stop(){if(!impl_||!impl_->running.exchange(false))return;if(impl_->listener!=INVALID_SOCKET){shutdown(impl_->listener,SD_BOTH);closesocket(impl_->listener);impl_->listener=INVALID_SOCKET;}if(impl_->accept_thread.joinable())impl_->accept_thread.join();{std::lock_guard<std::mutex> l(impl_->clients_mutex);for(auto& t:impl_->clients)if(t.joinable())t.join();impl_->clients.clear();}impl_->headers.clear();impl_->source.clear();impl_->token.clear();{std::lock_guard<std::mutex> l(impl_->urls_mutex);impl_->urls.clear();}WSACleanup();}
 }
 #endif
