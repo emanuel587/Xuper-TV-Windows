@@ -97,30 +97,23 @@ class RelayHandler(http.server.BaseHTTPRequestHandler):
         content_type = response.headers.get("Content-Type", "")
         is_playlist = ("mpegurl" in content_type.lower()
                        or urllib.parse.urlsplit(upstream_url).path.lower().endswith(".m3u8"))
-
-        if is_playlist and method == "GET" and status == 200:
+        body = b""
+        if method == "GET":
             try:
-                body = response.read(8 * 1024 * 1024 + 1)
+                body = response.read(8 * 1024 * 1024 + 1 if is_playlist else -1)
             except Exception:
                 response.close()
-                self.send_error(502, "Error leyendo el manifiesto")
+                self.send_error(502, "Error leyendo el origen")
                 return
-            response.close()
-            if len(body) > 8 * 1024 * 1024:
-                self.send_error(502, "Manifiesto demasiado grande")
-                return
+        response.close()
+
+        if is_playlist and len(body) > 8 * 1024 * 1024:
+            self.send_error(502, "Manifiesto demasiado grande")
+            return
+        if is_playlist and status == 200:
             text = body.decode("utf-8-sig", errors="replace")
             body = rewrite_playlist(text, upstream_url).encode("utf-8")
-            self.send_response(status)
-            self.send_header("Content-Type", "application/vnd.apple.mpegurl")
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Connection", "close")
-            self.end_headers()
-            try:
-                self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError):
-                pass
-            return
+            content_type = "application/vnd.apple.mpegurl"
 
         self.send_response(status)
         if content_type:
@@ -129,25 +122,15 @@ class RelayHandler(http.server.BaseHTTPRequestHandler):
             value = response.headers.get(name)
             if value:
                 self.send_header(name, value)
-        length = response.headers.get("Content-Length")
-        if length:
-            self.send_header("Content-Length", length)
+        self.send_header("Content-Length", str(len(body)) if method == "GET" else
+                         response.headers.get("Content-Length", "0"))
         self.send_header("Connection", "close")
         self.end_headers()
-        if method == "GET":
+        if method == "GET" and body:
             try:
-                while True:
-                    chunk = response.read(64 * 1024)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
+                self.wfile.write(body)
             except (BrokenPipeError, ConnectionResetError):
                 pass
-            except Exception:
-                pass
-        response.close()
-
 
 
 def main():
