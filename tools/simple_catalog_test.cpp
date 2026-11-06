@@ -18,7 +18,7 @@ struct Result {
     int category_id=-1;
 };
 HWND window_handle=nullptr, categories_list=nullptr, channels_list=nullptr, status_label=nullptr;
-HWND refresh_button=nullptr, source_button=nullptr;
+HWND refresh_button=nullptr, source_button=nullptr, category_label=nullptr, channel_label=nullptr;
 std::shared_ptr<xs::ServiceSession> session;
 xs::Catalog root_catalog, current_channels;
 std::vector<xs::Entry> categories, channels;
@@ -67,8 +67,10 @@ void start_task(Task task,int category=-1,int channel=-1) {
 }
 void layout(HWND hwnd) {
     RECT r{}; GetClientRect(hwnd,&r); const int w=r.right-r.left,h=r.bottom-r.top;
-    MoveWindow(categories_list,16,48,(w-48)/2,h-112,TRUE);
-    MoveWindow(channels_list,32+(w-48)/2,48,(w-48)/2,h-112,TRUE);
+    MoveWindow(category_label,16,44,(w-48)/2,20,TRUE);
+    MoveWindow(channel_label,32+(w-48)/2,44,(w-48)/2,20,TRUE);
+    MoveWindow(categories_list,16,66,(w-48)/2,h-130,TRUE);
+    MoveWindow(channels_list,32+(w-48)/2,66,(w-48)/2,h-130,TRUE);
     MoveWindow(status_label,16,h-48,w-32,24,TRUE);
     MoveWindow(refresh_button,16,12,130,28,TRUE);
     MoveWindow(source_button,156,12,180,28,TRUE);
@@ -77,8 +79,8 @@ LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     switch(msg) {
     case WM_CREATE: {
         window_handle=hwnd;
-        CreateWindowW(L"STATIC",L"Categorias",WS_CHILD|WS_VISIBLE,0,0,0,0,hwnd,nullptr,nullptr,nullptr);
-        CreateWindowW(L"STATIC",L"Canales",WS_CHILD|WS_VISIBLE,0,0,0,0,hwnd,nullptr,nullptr,nullptr);
+        category_label=CreateWindowW(L"STATIC",L"Categorias",WS_CHILD|WS_VISIBLE,0,0,0,0,hwnd,nullptr,nullptr,nullptr);
+        channel_label=CreateWindowW(L"STATIC",L"Canales",WS_CHILD|WS_VISIBLE,0,0,0,0,hwnd,nullptr,nullptr,nullptr);
         categories_list=CreateWindowW(L"LISTBOX",nullptr,WS_CHILD|WS_VISIBLE|WS_BORDER|LBS_NOTIFY|WS_VSCROLL,0,0,0,0,hwnd,reinterpret_cast<HMENU>(101),nullptr,nullptr);
         channels_list=CreateWindowW(L"LISTBOX",nullptr,WS_CHILD|WS_VISIBLE|WS_BORDER|LBS_NOTIFY|WS_VSCROLL,0,0,0,0,hwnd,reinterpret_cast<HMENU>(102),nullptr,nullptr);
         refresh_button=CreateWindowW(L"BUTTON",L"Conectar / recargar",WS_CHILD|WS_VISIBLE,0,0,0,0,hwnd,reinterpret_cast<HMENU>(103),nullptr,nullptr);
