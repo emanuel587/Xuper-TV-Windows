@@ -431,7 +431,11 @@ int main(int argc,char** argv){
                             status="Solicitando fuente del video...";view.draw(catalog,selected,status,full_memory);
                             xs::SourceResult result;xs::trace("catalog:source_begin");load([&]{result=xs::service_source(session,current,variant);},"Preparando reproduccion...");status=result.status;
                             xs::trace(result.ok?"catalog:source_received":"catalog:source_unavailable");
-                            source=result.ok?std::move(result.source):"";headers=std::move(result.headers);if(source.empty())external_play=false;options.variants=std::move(result.variants);
+                            source=result.ok?std::move(result.source):"";headers=std::move(result.headers);
+#ifdef _WIN32
+                            if(source.empty())external_play=false;
+#endif
+                            options.variants=std::move(result.variants);
                             const auto subtitles=result.subtitles;
                             for(const auto& sub:subtitles)options.subtitles.push_back(sub.language);
                             options.subtitle_loader=[session,subtitles](size_t i,std::string& data,std::string& error){
