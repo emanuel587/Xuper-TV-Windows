@@ -449,7 +449,7 @@ int main(int argc,char** argv){
                             if(external_play){
                                 std::string local_url,bridge_error;
                                 if(local_bridge.start(source,headers,local_url,bridge_error)){
-                                    const std::string args="\\""+local_url+"\\"";
+                                    const std::string args="\""+local_url+"\"";
                                     HINSTANCE launched=ShellExecuteA(nullptr,"open","vlc.exe",args.c_str(),nullptr,SW_SHOWNORMAL);
                                     if(reinterpret_cast<INT_PTR>(launched)>32)status="Canal enviado a VLC. El puente local mantiene la autorización.";
                                     else {local_bridge.stop();status="No se encontró VLC o Windows no pudo iniciarlo.";}
