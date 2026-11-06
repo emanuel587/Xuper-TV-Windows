@@ -51,3 +51,7 @@ test-installation:
 	@mkdir -p build-host
 	$(CXX) $(CXXFLAGS) tests/installation_test.cpp -o build-host/installation_test
 	./build-host/installation_test
+
+python-probe:
+	@mkdir -p build-host
+	$(CXX) $(CXXFLAGS) $(MBEDTLS_CFLAGS) $(CURL_CFLAGS) source/catalog.cpp source/codec.cpp source/ranger_codec.cpp source/service.cpp source/trace.cpp tools/python_service_probe.cpp $(MBEDTLS_LIBS) $(CURL_LIBS) -o build-host/python_service_probe.exe
