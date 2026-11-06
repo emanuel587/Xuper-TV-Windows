@@ -488,6 +488,7 @@ int main(int argc,char** argv){
     xs::trace("main:close_view");
 #ifdef _WIN32
     webui.stop();
+    local_bridge.stop();
 #endif
     view.close();
 #ifdef __SWITCH__
