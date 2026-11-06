@@ -90,9 +90,13 @@ class Probe:
             self.status.set(data.get("status", "No se pudo cargar."))
             messagebox.showwarning("Conexión", self.status.get())
             return
-        self.items = data.get("items", [])
+        items = data.get("items", [])
+        if target is self.categories:
+            self.category_items = items
+        else:
+            self.channel_items = items
         target.delete(0, tk.END)
-        for item in self.items:
+        for item in items:
             target.insert(tk.END, f'{item.get("title","Sin nombre")}  [{item.get("kind","")}]')
         self.status.set(data.get("status", "Catálogo recibido."))
 
@@ -100,14 +104,16 @@ class Probe:
         sel = self.categories.curselection()
         if not sel:
             return
-        item = self.items[sel[0]]
+        items = getattr(self, "category_items", [])
+        if sel[0] >= len(items):
+            return
+        item = items[sel[0]]
         if item.get("kind") == "category":
             data = self.request("channels", column_id=item.get("column_id", -1))
         else:
             data = self.request("browse", index=item["index"])
         self.show_catalog(data, self.channels)
         if data and data.get("ok"):
-            self.channel_items = data.get("items", [])
             self.status.set(data.get("status", "Canales cargados."))
 
     def play_selected(self, event=None):
