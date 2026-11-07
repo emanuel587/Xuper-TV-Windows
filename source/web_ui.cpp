@@ -139,6 +139,10 @@ void WebUi::thread_main() {
     const std::string html=load_frontend();
     if(html.empty())ok=false;
     if(ok)ok=webview_set_html(webview,html.c_str())>=0;
+    if(ok) {
+        HWND native_window=static_cast<HWND>(webview_get_window(webview));
+        if(native_window) { ShowWindow(native_window,SW_MAXIMIZE); SetForegroundWindow(native_window); }
+    }
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -205,8 +209,8 @@ void WebUi::sync(const Catalog& catalog,size_t selected,const std::string& statu
     }
     json<<']';
     std::ostringstream js;
-    js<<"if(window.xuperUI){window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
-      <<"window.xuperUI.setPage("<<json_quote(page)<<",false);"
+    js<<"if(window.xuperUI){window.xuperUI.setPage("<<json_quote(page)<<",false);"
+          <<"window.xuperUI.renderCatalog("<<json.str()<<','<<selected<<");"
       <<"window.xuperUI.setStatus("<<json_quote(status)<<");}";
     const auto script=js.str();
     webview_t handle=nullptr;
